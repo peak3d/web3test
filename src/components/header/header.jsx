@@ -3,7 +3,7 @@ import { withStyles } from '@material-ui/core/styles'
 import { Button, Typography, Modal } from '@material-ui/core'
 import { withRouter } from 'react-router-dom'
 import { colors } from '../../theme'
-import { BLOCKTICKER, ADDRESS_INDEX_CHANGED } from '../../stores/constants'
+import { YELD_BURNED, ADDRESS_INDEX_CHANGED } from '../../stores/constants'
 import Store from "../../stores"
 
 const emitter = Store.emitter
@@ -184,16 +184,16 @@ class Header extends Component {
   }
 
 	componentDidMount() {
-    emitter.on(BLOCKTICKER, this.onBlockTicker)
+    emitter.on(YELD_BURNED, this.onYeldBurned)
     emitter.on(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
 	}
 
 	componentWillUnmount() {
-    emitter.removeListener(BLOCKTICKER, this.onBlockTicker)
+    emitter.removeListener(YELD_BURNED, this.onYeldBurned)
     emitter.removeListener(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
 	}
 
-	onBlockTicker = async () => {
+	onYeldBurned = async () => {
     const burnedBalance = await store.getBurnedYeld()
     this.setState({ burnedBalance })
 	}

@@ -19,29 +19,17 @@ import WalletConnectProvider from '@walletconnect/web3-provider';
 const store = require('./stores/store').default.store
 
 interface IAppState {
-  fetching: boolean;
   connected: boolean;
   address: string;
   chainId: number;
   networkName: string;
-  assets: IAssetData[];
-  showModal: boolean;
-  pendingRequest: boolean;
-  result: any | null;
-  v2Selected: boolean;
 }
 
 const INITIAL_STATE: IAppState = {
-  fetching: false,
   connected: false,
   address: null,
   chainId: 1,
   networkName: 'mainnet',
-  assets: [],
-  showModal: false,
-  pendingRequest: false,
-  result: null,
-  v2Selected: true
 };
 
 class App extends Component {
@@ -162,11 +150,6 @@ class App extends Component {
                   onDisconnect = {this.resetApp}
                   connected = {this.state.connected}
                   address = {this.state.address}
-                  setV2Selected={bool => {
-                    this.setState({v2Selected: bool})
-                    this.updateContracts(bool)
-                  }}
-                  v2Selected={this.state.v2Selected}
                 />
               </Route>
             </Switch>

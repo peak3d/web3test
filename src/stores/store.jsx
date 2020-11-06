@@ -1,10 +1,12 @@
-import { BLOCKTICKER, ADDRESS_INDEX_CHANGED } from './constants'
+import { YELD_BURNED, ADDRESS_INDEX_CHANGED } from './constants'
 import yeldConfig from '../config/yeldConfig'
 
 const ethers = require('ethers');
 const Emitter = require('events').EventEmitter;
 
 var emitter = new Emitter();
+
+const burnAddress = '0x0000000000000000000000000000000000000000'
 
 class Store {
   constructor() {
@@ -20,7 +22,7 @@ class Store {
   }
 
   setYeldAddressIndex(index) {
-    if (this.addressIndex != index) {
+    if (this.addressIndex !== index) {
       this.addressIndex = index
       this.setupContracts()
       emitter.emit(ADDRESS_INDEX_CHANGED, index)
@@ -28,22 +30,14 @@ class Store {
   }
   
   setProvider(provider) {
-    if (this.ethersProvider) {
-      this.ethersProvider.removeAllListeners("block")
-    }
-    
     this.ethersProvider = provider
-
-    if (this.ethersProvider) {
-     this.ethersProvider.on("block", (blockNumber) => {
-        // Emitted on every block change
-        emitter.emit(BLOCKTICKER, blockNumber)
-      })
-    }
     this.setupContracts()
   }
   
   setupContracts = async () => {
+    if (this.yeldContract)
+      this.yeldContract.removeAllListeners()
+
     if (this.ethersProvider) {
       this.retirementYeldContract = new ethers.Contract(yeldConfig.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, this.ethersProvider)
       this.yDAIContract = new ethers.Contract(yeldConfig.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
@@ -52,12 +46,27 @@ class Store {
       this.yUSDCContract = new ethers.Contract(yeldConfig.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
       
       this.yeldContract = new ethers.Contract(yeldConfig.yeldAddress, yeldConfig.yeldAbi, this.ethersProvider)
+      // Event listener if YELD is Transfered to burnAdress
+      const filter = this.yeldContract.filters.Transfer(null,burnAddress);
+      this.yeldContract.on(filter, (from, to, amount, event) => {
+        console.log('burn: ', from, ' -> ', to, 'Amt: ', amount)
+        emitter.emit(YELD_BURNED)
+      });
+      // Fire the initial one
+      emitter.emit(YELD_BURNED)
+    } else {
+      this.retirementYeldContract = null
+      this.yDAIContract = null
+      this.yTUSDContract = null
+      this.yUSDTContract = null
+      this.yUSDCContract = null
+      this.yeldContract = null
     }
   }
   
   getBurnedYeld = async () => {
     try {
-      const result = await this.yeldContract.balanceOf('0x0000000000000000000000000000000000000000')
+      const result = await this.yeldContract.balanceOf(burnAddress)
       return result.div(ethers.constants.WeiPerEther.div(100)).toNumber()*0.01  
     } catch(e) {
       console.log(e)
