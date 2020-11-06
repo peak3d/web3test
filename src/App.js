@@ -1,46 +1,50 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
-import Web3 from "web3";
-import Web3Modal from "web3modal";
-import WalletConnectProvider from "@walletconnect/web3-provider";
-import {
-  getChainData
-} from "./utilities/chains";
 
+import CssBaseline from '@material-ui/core/CssBaseline';
+import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import interestTheme from './theme';
+import { colors } from './theme'
+import {
+  Switch,
+  Route
+} from "react-router-dom";
+import IpfsRouter from 'ipfs-react-router'
+import Header from './components/header';
+
+import { ethers } from 'ethers';
+import Web3Modal from 'web3modal';
+import WalletConnectProvider from '@walletconnect/web3-provider';
+
+const store = require('./stores/store').default.store
 
 interface IAppState {
   fetching: boolean;
-  address: string;
-  web3: any;
-  provider: any;
   connected: boolean;
+  address: string;
   chainId: number;
-  networkId: number;
+  networkName: string;
   assets: IAssetData[];
   showModal: boolean;
   pendingRequest: boolean;
   result: any | null;
+  v2Selected: boolean;
 }
 
 const INITIAL_STATE: IAppState = {
   fetching: false,
-  address: "",
-  web3: null,
-  provider: null,
   connected: false,
+  address: null,
   chainId: 1,
-  networkId: 1,
+  networkName: 'mainnet',
   assets: [],
   showModal: false,
   pendingRequest: false,
-  result: null
+  result: null,
+  v2Selected: true
 };
 
 class App extends Component {
-  web3Modal: Web3Modal;
-  state: IAppState;
-  
   constructor(props: any) {
     super(props);
     this.state = {
@@ -48,16 +52,20 @@ class App extends Component {
     };
 
     this.web3Modal = new Web3Modal({
-      network: this.getNetwork(),
-      cacheProvider: false,
+      network: this.state.networkName,
+      cacheProvider: true,
       providerOptions: this.getProviderOptions()
     });
+    this.ethersProvider = null;
+    this.web3Provider = null;
   }
 
-  async componentDidMount() {
-    await this.setup()
+  componentDidMount() {
+    if (this.web3Modal.cachedProvider) {
+      this.setup();
+    }
   }
-  
+
   subscribeProvider = async (provider: any) => {
     if (!provider.on) {
       return;
@@ -73,25 +81,20 @@ class App extends Component {
     
     provider.on("accountsChanged", async (accounts: string[]) => {
       await this.setState({ address: accounts[0] });
-      //await this.getAccountAssets();
     });
     
     provider.on("chainChanged", async (chainId: number) => {
-      const { web3 } = this.state;
-      const networkId = await web3.eth.net.getId();
-      await this.setState({ chainId, networkId });
-      //await this.getAccountAssets();
+      const networkName = await this.ethersProvider.getNetwork().name;
+      await this.setState({ chainId, networkName });
     });
 
     provider.on("networkChanged", async (networkId: number) => {
-      const { web3 } = this.state;
-      const chainId = await web3.eth.chainId();
-      await this.setState({ chainId, networkId });
-      //await this.getAccountAssets();
+      const network = await this.ethersProvider.getNetwork();
+      const chainId = network.chainId;
+      const networkName = network.name;
+      await this.setState({ chainId, networkName });
     });
   };
-  
-  getNetwork = () => getChainData(this.state.chainId).network;
 
   getProviderOptions = () => {
     const providerOptions = {
@@ -106,34 +109,35 @@ class App extends Component {
   }
   
   setup = async () => {
-    const provider = await this.web3Modal.connect();
-    await this.subscribeProvider(provider);
-    
-    const web3 = new Web3(provider);
-    const accounts = await web3.eth.getAccounts();
-    const address = accounts[0];
-    const networkId = await web3.eth.net.getId();
-    var chainId;
-    
-    if (typeof web3.eth.chainId === 'function')
-      chainId = await web3.eth.chainId();
-    else
-      chainId = await web3.eth.getChainId();
-    
-    await this.setState({
-      web3,
-      provider,
-      connected: true,
-      address,
-      chainId,
-      networkId
-    });
+    try {
+      this.web3Provider = await this.web3Modal.connect()
+      await this.subscribeProvider(this.web3Provider)
+      
+      this.ethersProvider = new ethers.providers.Web3Provider(this.web3Provider)
+      const accounts = await this.ethersProvider.listAccounts()
+      const address = accounts[0]
+      const network = await this.ethersProvider.getNetwork()
+      const chainId = network.chainId
+      const networkName = network.name
+
+      await this.setState({
+        connected: true,
+        address: address,
+        chainId,
+        networkName
+      })
+      store.setProvider(this.ethersProvider)
+    } catch (e) {
+      console.log(e)
+      await this.resetApp()
+    }
   }
 
   resetApp = async () => {
-    const { web3 } = this.state;
-    if (web3 && web3.currentProvider && web3.currentProvider.close) {
-      await web3.currentProvider.close();
+    store.setProvider(null)
+    if (this.ethersProvider) {
+      this.ethersProvider = null;
+      this.web3Provider = null;
     }
     await this.web3Modal.clearCachedProvider();
     this.setState({ ...INITIAL_STATE });
@@ -141,22 +145,34 @@ class App extends Component {
   
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
+      <MuiThemeProvider theme={createMuiTheme(interestTheme)}>
+        <CssBaseline />
+        <IpfsRouter>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
+            alignItems: 'center',
+            background: colors.white,
+          }}>
+            <Switch>
+              <Route path="/">
+                <Header
+                  onConnect = {this.setup}
+                  onDisconnect = {this.resetApp}
+                  connected = {this.state.connected}
+                  address = {this.state.address}
+                  setV2Selected={bool => {
+                    this.setState({v2Selected: bool})
+                    this.updateContracts(bool)
+                  }}
+                  v2Selected={this.state.v2Selected}
+                />
+              </Route>
+            </Switch>
+          </div>
+        </IpfsRouter>
+      </MuiThemeProvider>
     );
   }
 }
