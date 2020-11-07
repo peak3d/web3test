@@ -3,10 +3,17 @@ import { withStyles } from '@material-ui/core/styles'
 import { Button, Typography, Modal } from '@material-ui/core'
 import { withRouter } from 'react-router-dom'
 import { colors } from '../../theme'
-import { YELD_BURNED, ADDRESS_INDEX_CHANGED } from '../../stores/constants'
+
+import { YELD_CONTRACT,
+         ADDRESS_INDEX_CHANGED,
+         CONNECTION_ESTABLISHED,
+         FILTER_BURNED
+       } from '../../stores/constants'
+
 import Store from "../../stores"
 
 const emitter = Store.emitter
+const dispatcher = Store.dispatcher
 const store = Store.store
 
 const styles = theme => ({
@@ -38,7 +45,7 @@ const styles = theme => ({
 			display: 'flex',
 			flexDirection: 'column-reverse',
 			position: 'absolute',
-			top: '130px',
+			top: '100px',
 			left: '50%',
 			transform: 'translateX(-50%)',
 			width: '100%',
@@ -184,23 +191,29 @@ class Header extends Component {
   }
 
 	componentDidMount() {
-    emitter.on(YELD_BURNED, this.onYeldBurned)
+    emitter.on(YELD_CONTRACT, this.onYeldContract)
     emitter.on(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
+    emitter.on(CONNECTION_ESTABLISHED, this.onConnectionEstablished) //store is ready to handle tx's
 	}
 
 	componentWillUnmount() {
-    emitter.removeListener(YELD_BURNED, this.onYeldBurned)
+    emitter.removeListener(YELD_CONTRACT, this.onYeldContract)
     emitter.removeListener(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
+    emitter.removeListener(CONNECTION_ESTABLISHED, this.onConnectionEstablished)
 	}
 
-	onYeldBurned = async () => {
-    const burnedBalance = await store.getBurnedYeld()
-    this.setState({ burnedBalance })
+	onYeldContract = async (asset) => {
+    if (asset.yeldBurned)
+      this.setState({ burnedBalance: asset.yeldBurned })
 	}
 
 	onAddressIndexChanged = async (index) => {
     this.setState({ v2Selected: index > 0 })
 	}
+  
+  onConnectionEstablished = async () => {
+    dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_BURNED] })  
+  }
 
 	render() {
 		const { address, classes } = this.props

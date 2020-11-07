@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import IpfsRouter from 'ipfs-react-router'
 import Header from './components/header';
+import StakeSimple from './components/stakeSimple';
 
 import { ethers } from 'ethers';
 import Web3Modal from 'web3modal';
@@ -114,7 +115,7 @@ class App extends Component {
         chainId,
         networkName
       })
-      store.setProvider(this.ethersProvider)
+      store.setProvider(this.ethersProvider, address)
     } catch (e) {
       console.log(e)
       await this.resetApp()
@@ -150,6 +151,10 @@ class App extends Component {
                   onDisconnect = {this.resetApp}
                   connected = {this.state.connected}
                   address = {this.state.address}
+                />
+                {/* <Vaults /> */}
+                <StakeSimple 
+                  connected = {this.state.connected}
                 />
               </Route>
             </Switch>
