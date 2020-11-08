@@ -9,10 +9,13 @@ import { withTranslation } from 'react-i18next'
 import { colors } from '../../theme'
 
 import { YELD_CONTRACT,
-         CONNECTION_ESTABLISHED,
+         YELD_RETIREMENT,
+         CONNECTION_CHANGED,
          FILTER_AMOUNT,
          FILTER_BURNED,
          FILTER_SUPPLY,
+         FILTER_BALANCE,
+         FILTER_STAKE,
        } from '../../stores/constants'
 
 //import UnlockModal from '../unlock/unlockModal.jsx'
@@ -239,162 +242,107 @@ const styles = theme => ({
 	},
 })
 
+const INITIAL_STATE = {
+  modalOpen: false,
+  yeldBalance: 0,
+  yeldTotalSupply: null,
+  yeldBurned: null,
+  yeldStakeAmount: 0,
+  stakeTimestamp: 0,
+  ethRetirementBalance: null,
+  hoursPassedAfterStaking: '00m 00s',
+  stakeModalOpen: false,
+  unstakeModalOpen: false,
+  stakeAmount: 0,
+  unStakeAmount: 0,
+};
+
+
 class StakeSimple extends Component {
 	constructor(props) {
 		super()
 
 		this.state = {
-			modalOpen: false,
-			retirementYeldAvailable: false, // When you have something to redeem
-			earnings: 0,
-			yeldBalance: 0,
-      yeldTotalSupply: 0,
-      yeldBurned: 0,
-			hoursPassedAfterStaking: '00m 00s',
-			retirementYeldCurrentStaked: 0,
-			stakeModalOpen: false,
-			unstakeModalOpen: false,
-			stakeAmount: 0,
-			unStakeAmount: 0,
+      ...INITIAL_STATE
 		}
 	}
 
-	secondsToHms(seconds) {
-		if (!seconds) return ''
-
-		let duration = seconds
-		let hours = duration / 3600
-		duration = duration % 3600
-
-		let min = parseInt(duration / 60)
-		duration = duration % 60
-
-		let sec = parseInt(duration)
-
-		if (sec < 10) {
-			sec = `0${sec}`
-		}
-		if (min < 10) {
-			min = `0${min}`
-		}
-
-		if (parseInt(hours, 10) > 0) {
-			return `${parseInt(hours, 10)}h ${min}m ${sec}s`
-		} else if (min === 0) {
-			return `${sec}s`
-		} else {
-			return `${min}m ${sec}s`
-		}
-	}
-
-  componentDidUpdate(prevProps) {
+  componentDidMount(prevProps) {
     emitter.on(YELD_CONTRACT, this.onYeldContract)
-    emitter.on(CONNECTION_ESTABLISHED, this.onConnectionEstablished)
+    emitter.on(YELD_RETIREMENT, this.onYeldRetirement)
+    emitter.on(CONNECTION_CHANGED, this.onConnectionChanged)
+    if (store.isConnected())
+      this._requestData()
   }
 
   componentWillUnmount() {
     emitter.removeListener(YELD_CONTRACT, this.onYeldContract)
-    emitter.removeListener(CONNECTION_ESTABLISHED, this.onConnectionEstablished)
+    emitter.removeListener(YELD_RETIREMENT, this.onYeldRetirement)
+    emitter.removeListener(CONNECTION_CHANGED, this.onConnectionChanged)
   }
-  
+
   onYeldContract = async (asset) => {
     var newState = {}
     if (asset.yeldAmount)
       newState.yeldBalance = asset.yeldAmount
     if (asset.totalSupply)
-      newState.yeldTotalSupply = asset.totalSupply;
+      newState.yeldTotalSupply = asset.totalSupply
     if (asset.yeldBurned)
-      newState.yeldBurned = asset.yeldBurned;
+      newState.yeldBurned = asset.yeldBurned
     this.setState(newState)
   }
 
-  onConnectionEstablished = async () => {
-    dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_AMOUNT, FILTER_BURNED, FILTER_SUPPLY] })  
+  onYeldRetirement = async (asset) => {
+    var newState = {}
+    if (asset.stake) {
+      newState.yeldStakeAmount = store.fromWei(asset.stake.yeldBalance)
+      newState.stakeTimestamp = asset.stake.timestamp
+    }
+    if (asset.balance)
+      newState.ethRetirementBalanceETH = store.fromWei(asset.balance);
+    this.setState(newState)
   }
 
-  async calculateEarnings(yeldBalance) {
-		/*const balanceBlackHole = String(
-			await window.yeld.methods
-				.balanceOf('0x0000000000000000000000000000000000000000')
-				.call()
-		)
-		const totalSupply = await window.yeld.methods.totalSupply().call()
-		const userPercentage = yeldBalance / (totalSupply - balanceBlackHole)
-		// Gets how many ETH the user earns based on his balance
-		const balanceRetirementContract = await window.web3.eth.getBalance(
-			this.props.retirementYeld._address
-		)
-		const earnings = window.web3.utils.fromWei(
-			String(Math.floor((balanceRetirementContract * userPercentage) / 100))
-		)*/
-    const earnings = -1
-		return earnings
-	}
+  onConnectionChanged = async (connection) => {
+    if (connection) {
+      this._requestData()
+    } else {
+      this.setState({ ...INITIAL_STATE });
+    }
+  }
 
-	async setupContractData() {
-		/*const snapshot = await this.props.retirementYeld.methods
-			.stakes(window.web3.eth.defaultAccount)
-			.call()
-		const timestamp = Number(snapshot.timestamp)
-		const yeldBalance = snapshot.yeldBalance
-		const oneDay = 86400
-		const dateNow = Number(Date.now().toString().substr(0, 10))
-		let snapshotWithOneDay = timestamp + oneDay
+  _requestData() {
+    // Request yeld contract data
+    dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_AMOUNT, FILTER_BURNED, FILTER_SUPPLY] })
+    // Request requirement contract data
+    dispatcher.dispatch({ type: YELD_RETIREMENT, content: [FILTER_BALANCE, FILTER_STAKE] })
+  }
 
-		this.setYeldBalance()
+  getRetirement = async () => {
+    const {yeldStakeAmount, stakeTimestamp, yeldTotalSupply, yeldBurned, ethRetirementBalance} = this.state
+    const now = Date.now() / 1000
 
-		// If yeldBalance == 0, the timer should be hidden and button disabled
-		// else, display the currently staked
-		if (yeldBalance === 0) {
-			return this.setState({
-				hoursPassedAfterStaking: '00m 00s',
-				retirementYeldAvailable: false,
-			})
-		} else {
-			this.setState({
-				retirementYeldCurrentStaked: yeldBalance,
-			})
-		}
+    //nothing staked -> disable
+    if (yeldStakeAmount <= 0
+    //no stake information available so far
+    || stakeTimestamp === 0 || stakeTimestamp > now
+    // information from yeld contract not available
+    || (yeldTotalSupply === null || yeldBurned === null || ethRetirementBalance === null))
+      return {}
 
-		// If snapshot timestamp == 0, the timer should be hidden and button disabled
-		if (timestamp === 0) {
-			return this.setState({
-				hoursPassedAfterStaking: '00m 00s',
-				retirementYeldAvailable: false,
-			})
-		}
-
-		// If timestamp is not zero and yeldBalance is not zero and timestamp + 1 day is
-		// larger than today, show timer, earnings and button disabled
-		if (snapshotWithOneDay > dateNow) {
-			let substraction = timestamp === 0 ? 0 : dateNow - timestamp
-			const hoursPassedAfterStaking = this.secondsToHms(String(substraction))
-			const earnings = await this.calculateEarnings(yeldBalance)
-			return this.setState({
-				retirementYeldAvailable: false,
-				hoursPassedAfterStaking,
-				earnings,
-			})
-		}
-
-		// If timestamp is not zero and yeldBalance is not zero, check timestamp + 1 day
-		// then if today is larger than timestamp + 1 day, enable button and show timer with earnings
-		if (snapshotWithOneDay <= dateNow) {
-			let substraction = timestamp === 0 ? 0 : dateNow - timestamp
-			const hoursPassedAfterStaking = this.secondsToHms(String(substraction))
-			const earnings = await this.calculateEarnings(yeldBalance)
-			return this.setState({
-				retirementYeldAvailable: true,
-				hoursPassedAfterStaking,
-				earnings,
-			})
-		}*/
-	}
+    // do we have to wait?
+    const timeElapsed = now - stakeTimestamp
+    if (timeElapsed < 86400) {
+      const timeLeft = 86400 - timeElapsed;
+      return {timer: (timeLeft / 3600).toString() + ':' + (timeLeft % 3600).toString()}
+    }
+		const userPercentage = yeldStakeAmount / (yeldTotalSupply - yeldBurned)
+    return {value: (ethRetirementBalance * userPercentage) / 100}
+  }
 
 	render() {
 		const { classes } = this.props
-
-		//const { account, modalOpen } = this.state
+    const retirement = this.getRetirement()
 
 		return (
 			<div className={classes.root}>
@@ -433,11 +381,9 @@ class StakeSimple extends Component {
 										Stake Yeld Tokens ({this.state.yeldBalance.toFixed(2)} YELD)
 										<br />
 										<i>
-											{this.state.retirementYeldCurrentStaked <= 0
+											{this.state.yeldStakedAmount <= 0
 												? ''
-												: 'Currently Staked ' + store.fromWei(
-														String(this.state.retirementYeldCurrentStaked)
-												  ) +' YELD'}
+												: 'Currently Staked: ' + this.state.yeldStakeAmount +' YELD'}
 										</i>
 									</Typography>
 								</Button>
@@ -455,7 +401,7 @@ class StakeSimple extends Component {
 								}}>
 								<Button
 									color="primary"
-									disabled={this.state.retirementYeldCurrentStaked <= 0}
+									disabled={this.state.yeldStakeAmount <= 0}
 									onClick={() => this.setState({ unstakeModalOpen: true })}>
 									<Typography variant={'h5'} color="secondary">
 										Unstake Wallet
@@ -464,7 +410,7 @@ class StakeSimple extends Component {
 							</Box>
 							<Box className={classes.boxRetirementYeldAvailable}>
 								<Button
-									disabled={!this.state.retirementYeldAvailable}
+									disabled={!retirement.value}
 									onClick={async () => {
 										if (true /*await betaTesting()*/) {
 											//await this.props.retirementYeld.methods.redeemETH().send({
@@ -480,19 +426,19 @@ class StakeSimple extends Component {
 										variant={'h5'}
 										color="secondary"
 										style={{ color: '#000000' }}>
-										{!this.state.retirementYeldAvailable ? (
+										{!retirement.value ? (
 											<span>
 												No ETH to Redeem Yet
 												<br />
 												<i>
-													{this.state.hoursPassedAfterStaking === '00m 00s'
-														? ''
-														: `Time passed ${this.state.hoursPassedAfterStaking}`}
+													{retirement.timer
+														? `Time left ${retirement.timer}`
+                          : ''}
 												</i>
 											</span>
 										) : (
 											<span>
-												Redeem Retirement Yield ({this.state.earnings} ETH)
+												Redeem Retirement Yield ({retirement.value} ETH)
 											</span>
 										)}
 									</Typography>
@@ -657,16 +603,10 @@ class StakeSimple extends Component {
 										placeholder="0"
 										variant="outlined"
 										error={
-											this.state.unStakeAmount >
-                      store.fromWei(
-                        String(this.state.retirementYeldCurrentStaked)
-                      )
+											this.state.unStakeAmount > this.state.yeldStakeAmount
 										}
 										helperText={
-											this.state.unStakeAmount >
-                      store.fromWei(
-                        String(this.state.retirementYeldCurrentStaked)
-                      )
+											this.state.unStakeAmount > this.state.yeldStakeAmount
 												? 'Enter a number less than ' + store.fromWei(
 														String(this.state.retirementYeldCurrentStaked)
 												  ) + ' (Current Stake)'
@@ -750,22 +690,9 @@ class StakeSimple extends Component {
 		}
 	}
 
-	addressClicked = () => {
-		this.setState({ modalOpen: true })
-	}
-
 	closeModal = () => {
 		this.setState({ modalOpen: false })
 	}
-
-	/*renderModal = () => {
-		return (
-			<UnlockModal
-				closeModal={this.closeModal}
-				modalOpen={this.state.modalOpen}
-			/>
-		)
-	}*/
 }
 
 export default withTranslation()(withRouter(withStyles(styles)(StakeSimple)))

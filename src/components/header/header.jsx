@@ -6,14 +6,14 @@ import { colors } from '../../theme'
 
 import { YELD_CONTRACT,
          ADDRESS_INDEX_CHANGED,
-         CONNECTION_ESTABLISHED,
-         FILTER_BURNED
+         CONNECTION_CHANGED,
+         //FILTER_BURNED
        } from '../../stores/constants'
 
 import Store from "../../stores"
 
 const emitter = Store.emitter
-const dispatcher = Store.dispatcher
+//const dispatcher = Store.dispatcher
 const store = Store.store
 
 const styles = theme => ({
@@ -167,39 +167,29 @@ const styles = theme => ({
 	},
 })
 
+const INITIAL_STATE = {
+  v2Selected: true,
+  yMechanicsModalOpen: false,
+  burnedBalance: null,
+}
+
 class Header extends Component {
 	constructor(props) {
 		super(props)
 
-		this.state = {
-      v2Selected: true,
-      modalOpen: false,
-			retirementYeldAvailable: false, // When you have something to redeem
-			earnings: 0,
-			yeldBalance: 0,
-			hoursPassedAfterStaking: 0,
-			retirementYeldCurrentStaked: 0,
-			stakeModalOpen: false,
-			unstakeModalOpen: false,
-			stakeAmount: 0,
-			unStakeAmount: 0,
-			yMechanicsModalOpen: false,
-			stakeProcessing: false,
-			unstakeProcessing: false,
-			burnedBalance: null,
-		}
+		this.state = { ...INITIAL_STATE }
   }
 
 	componentDidMount() {
     emitter.on(YELD_CONTRACT, this.onYeldContract)
     emitter.on(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
-    emitter.on(CONNECTION_ESTABLISHED, this.onConnectionEstablished) //store is ready to handle tx's
+    emitter.on(CONNECTION_CHANGED, this.onConnectionChanged) //store is ready to handle tx's
 	}
 
 	componentWillUnmount() {
     emitter.removeListener(YELD_CONTRACT, this.onYeldContract)
     emitter.removeListener(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
-    emitter.removeListener(CONNECTION_ESTABLISHED, this.onConnectionEstablished)
+    emitter.removeListener(CONNECTION_CHANGED, this.onConnectionChanged)
 	}
 
 	onYeldContract = async (asset) => {
@@ -211,14 +201,17 @@ class Header extends Component {
     this.setState({ v2Selected: index > 0 })
 	}
   
-  onConnectionEstablished = async () => {
-    dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_BURNED] })  
+  onConnectionChanged = async (connection) => {
+    if (connection) {
+      // price update is already triggered from stakesimple
+      //dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_BURNED] })  
+    } else {
+      this.setState({ ...INITIAL_STATE });  
+    }
   }
 
 	render() {
 		const { address, classes } = this.props
-
-		const { modalOpen } = this.state
 
 		var shortAddress = null
 		if (address) {
@@ -406,8 +399,6 @@ class Header extends Component {
 						</Typography>
 					)}
 				</div>
-
-				{modalOpen && this.renderModal()}
 			</div>
 		)
 	}
@@ -441,15 +432,6 @@ class Header extends Component {
 			</div>
 		)
 	}
-
-	/*renderModal = () => {
-		return (
-			<UnlockModal
-				closeModal={this.closeModal}
-				modalOpen={this.state.modalOpen}
-			/>
-		)
-	}*/
 }
 
 export default withRouter(withStyles(styles)(Header))

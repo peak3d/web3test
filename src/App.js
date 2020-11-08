@@ -59,28 +59,30 @@ class App extends Component {
     if (!provider.on) {
       return;
     }
-    
+
     provider.on("close", () => {
       this.resetApp()
     });
-    
+
     provider.on("disconnect", () => {
       this.resetApp()
     });
-    
+
     provider.on("accountsChanged", async (accounts: string[]) => {
+      store.setProvider(this.ethersProvider, this.state.chainId, accounts[0])
       await this.setState({ address: accounts[0] });
     });
-    
+
     provider.on("chainChanged", async (chainId: number) => {
-      const networkName = await this.ethersProvider.getNetwork().name;
-      await this.setState({ chainId, networkName });
+      store.setProvider(this.ethersProvider, chainId, this.state.address)
+      await this.setState({ chainId });
     });
 
     provider.on("networkChanged", async (networkId: number) => {
       const network = await this.ethersProvider.getNetwork();
       const chainId = network.chainId;
       const networkName = network.name;
+      store.setProvider(this.ethersProvider, chainId, this.state.address)
       await this.setState({ chainId, networkName });
     });
   };
@@ -96,12 +98,12 @@ class App extends Component {
     }
     return providerOptions
   }
-  
+
   setup = async () => {
     try {
       this.web3Provider = await this.web3Modal.connect()
       await this.subscribeProvider(this.web3Provider)
-      
+
       this.ethersProvider = new ethers.providers.Web3Provider(this.web3Provider)
       const accounts = await this.ethersProvider.listAccounts()
       const address = accounts[0]
@@ -115,7 +117,7 @@ class App extends Component {
         chainId,
         networkName
       })
-      store.setProvider(this.ethersProvider, address)
+      store.setProvider(this.ethersProvider, chainId, address)
     } catch (e) {
       console.log(e)
       await this.resetApp()
@@ -123,7 +125,7 @@ class App extends Component {
   }
 
   resetApp = async () => {
-    store.setProvider(null)
+    store.setProvider()
     if (this.ethersProvider) {
       this.ethersProvider = null;
       this.web3Provider = null;
@@ -131,7 +133,7 @@ class App extends Component {
     await this.web3Modal.clearCachedProvider();
     this.setState({ ...INITIAL_STATE });
   };
-  
+
   render() {
     return (
       <MuiThemeProvider theme={createMuiTheme(interestTheme)}>
@@ -153,7 +155,7 @@ class App extends Component {
                   address = {this.state.address}
                 />
                 {/* <Vaults /> */}
-                <StakeSimple 
+                <StakeSimple
                   connected = {this.state.connected}
                 />
               </Route>

@@ -1,12 +1,15 @@
 import async from 'async';
-import { 
+import {
   ERROR,
   YELD_CONTRACT,
+  YELD_RETIREMENT,
   ADDRESS_INDEX_CHANGED,
-  CONNECTION_ESTABLISHED,
+  CONNECTION_CHANGED,
   FILTER_AMOUNT,
   FILTER_BURNED,
-  FILTER_SUPPLY
+  FILTER_SUPPLY,
+  FILTER_BALANCE,
+  FILTER_STAKE,
 } from './constants'
 
 import yeldConfig from '../config/yeldConfig'
@@ -23,21 +26,26 @@ const burnAddress = '0x0000000000000000000000000000000000000000'
 class Store {
   constructor() {
     this.addressIndex = 1
-    this.ethersProvider = 0
+    this.ethersProvider = null
     this.address = null
-    
-    this.retirementYeldContract = null;
+    this.chainId = 1
+
+    this.retirementYeldContract = null
+    this.retirementYeldAddress = null
     this.yDAIContract = null
     this.yTUSDContract = null
     this.yUSDTContract = null
     this.yUSDCContract = null
     this.yeldContract = null
-    
+
     dispatcher.register(
       function (payload) {
         switch (payload.type) {
           case YELD_CONTRACT:
             this.getYeldContractData(payload.content);
+            break;
+          case YELD_RETIREMENT:
+            this.getRetirementContractData(payload.content);
             break;
           default: {
           }
@@ -53,26 +61,39 @@ class Store {
       emitter.emit(ADDRESS_INDEX_CHANGED, index)
     }
   }
-  
-  setProvider(provider, address) {
+
+  setProvider(provider, chainId, address) {
     this.ethersProvider = provider
+    this.chainId = chainId
     this.address = address
-    this.setupContracts()
-    emitter.emit(CONNECTION_ESTABLISHED)
+    if (!this.setupContracts())
+      this.ethersProvider = null
+    emitter.emit(CONNECTION_CHANGED, provider, address)
   }
-  
+
+  isConnected = () => {
+    return this.ethersProvider!== null
+  }
+
   setupContracts = async () => {
     if (this.yeldContract)
       this.yeldContract.removeAllListeners()
 
     if (this.ethersProvider) {
-      this.retirementYeldContract = new ethers.Contract(yeldConfig.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, this.ethersProvider)
-      this.yDAIContract = new ethers.Contract(yeldConfig.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-      this.yTUSDContract = new ethers.Contract(yeldConfig.yTUSDAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-      this.yUSDTContract = new ethers.Contract(yeldConfig.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-      this.yUSDCContract = new ethers.Contract(yeldConfig.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-      
-      this.yeldContract = new ethers.Contract(yeldConfig.yeldAddress, yeldConfig.yeldAbi, this.ethersProvider)
+       const chainAddresses = yeldConfig.addresses[this.chainId]
+       if (!chainAddresses)
+         return false
+
+      if (this.chainId == 1) {
+        this.yDAIContract = new ethers.Contract(chainAddresses.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
+        this.yTUSDContract = new ethers.Contract(chainAddresses.yTUSDAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
+        this.yUSDTContract = new ethers.Contract(chainAddresses.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
+        this.yUSDCContract = new ethers.Contract(chainAddresses.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
+      }
+
+      this.retirementYeldAddress = chainAddresses.retirementYeldAddresses[this.addressIndex];
+      this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, this.ethersProvider)
+      this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, this.ethersProvider)
       // Event listener if YELD is Transfered to burnAdress
       const filter = this.yeldContract.filters.Transfer(null,burnAddress);
       this.yeldContract.on(filter, (from, to, amount, event) => {
@@ -87,10 +108,11 @@ class Store {
       this.yUSDCContract = null
       this.yeldContract = null
     }
+    return true
   }
-  
+
   getYeldContractData(filter) {
-    if (filter.length) 
+    if (filter.length)
       async.parallel([
         (callbackInner) => { this._getYeldAmount(filter, callbackInner) },
         (callbackInner) => { this._getYeldTotalSupply(filter, callbackInner) },
@@ -112,14 +134,36 @@ class Store {
         }
       })
   }
-  
+
+  getRetirementContractData(filter) {
+    if (filter.length)
+      async.parallel([
+        (callbackInner) => { this._getStakeInfo(filter, callbackInner) },
+        (callbackInner) => { this._getRetirementBalance(filter, callbackInner) },
+      ], (err, data) => {
+        if (err) {
+          console.log(err)
+          emitter.emit(ERROR, {error: err.toString()})
+        }
+        else {
+          var asset = {}
+          if (data[0])
+            asset.stake = data[0]
+          if (data[1])
+            asset.balance = data[1]
+          emitter.emit(YELD_RETIREMENT, asset)
+        }
+      })
+  }
+
+
   _getYeldAmount = async (filter, callback) => {
     if (!filter.includes(FILTER_AMOUNT))
       return callback(null, null)
 
     try {
       const result = await this.yeldContract.balanceOf(this.address)
-      callback(null, this.fromWei(result))  
+      callback(null, this.fromWei(result))
     } catch(e) {
       console.log(e)
       return callback(e)
@@ -129,10 +173,10 @@ class Store {
   _getYeldBurned = async (filter, callback) => {
     if (!filter.includes(FILTER_BURNED))
       return callback(null, null)
-    
+
     try {
       const result = await this.yeldContract.balanceOf(burnAddress)
-      callback(null, this.fromWei(result))  
+      callback(null, this.fromWei(result))
     } catch(e) {
       console.log(e)
       return callback(e)
@@ -142,7 +186,40 @@ class Store {
   _getYeldTotalSupply = async (filter, callback) => {
     if (!filter.includes(FILTER_SUPPLY))
       return callback(null, null)
-    callback(null, 1000);
+
+    try {
+      const result = await this.yeldContract.totalSupply()
+      callback(null, this.fromWei(result))
+    } catch(e) {
+      console.log(e)
+      return callback(e)
+    }
+  }
+
+  _getStakeInfo = async (filter, callback) => {
+    if (!filter.includes(FILTER_STAKE))
+      return callback(null, null)
+
+    try {
+      const result = await this.retirementYeldContract.stakes(this.address)
+      callback(null, result)
+    } catch(e) {
+      console.log(e)
+      return callback(e)
+    }
+  }
+
+  _getRetirementBalance = async (filter, callback) => {
+    if (!filter.includes(FILTER_BALANCE))
+      return callback(null, null)
+
+    try {
+      const result = await this.ethersProvider.getBalance(this.retirementYeldAddress);
+      callback(null, result)
+    } catch(e) {
+      console.log(e)
+      return callback(e)
+    }
   }
 
   fromWei(number) {
