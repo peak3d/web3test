@@ -386,7 +386,7 @@ class Header extends Component {
 							variant={'h4'}
 							className={classes.walletAddress}
 							onClick={() => this.props.onDisconnect()}>
-							{shortAddress}
+							{shortAddress + ' (' + this.props.networkName + ')'}
 							<div className={classes.connectedDot}></div>
 						</Typography>
 					)}

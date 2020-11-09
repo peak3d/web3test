@@ -100,6 +100,13 @@ class Store {
         this.yUSDTContract = new ethers.Contract(chainAddresses.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
         this.yUSDCContract = new ethers.Contract(chainAddresses.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
       }
+      else
+      {
+        this.yDAIContract = null
+        this.yTUSDContract = null
+        this.yUSDTContract = null
+        this.yUSDCContract = null
+      }
 
       this.retirementYeldAddress = chainAddresses.retirementYeldAddresses[this.addressIndex];
       this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, signer)

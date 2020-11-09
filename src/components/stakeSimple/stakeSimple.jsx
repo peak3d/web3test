@@ -455,7 +455,7 @@ class StakeSimple extends Component {
                         <br />
                         <i>
                           {retirement.timer
-                            ? `Redeem unlocked in: ${retirement.timer}`
+                            ? `Redeem unlocked in: ${retirement.timer} hours`
                           : ''}
                         </i>
                       </span>

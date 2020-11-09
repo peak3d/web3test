@@ -38,45 +38,52 @@ class App extends Component {
     super(props);
     this.state = {
       ...INITIAL_STATE
-    };
+    }
 
     this.web3Modal = new Web3Modal({
       network: this.state.networkName,
       cacheProvider: true,
       providerOptions: this.getProviderOptions()
-    });
-    this.ethersProvider = null;
-    this.web3Provider = null;
+    })
+
+    this.ethersProvider = null
+    this.web3Provider = null
   }
 
   componentDidMount() {
     if (this.web3Modal.cachedProvider) {
-      this.setup();
+      this.setup()
     }
   }
 
   subscribeProvider = async (provider: any) => {
     if (!provider.on) {
-      return;
+      return
     }
 
     provider.on("close", () => {
       this.resetApp()
-    });
+    })
 
     provider.on("disconnect", () => {
       this.resetApp()
-    });
+    })
 
     provider.on("accountsChanged", async (accounts: string[]) => {
-      store.setProvider(this.ethersProvider, this.state.chainId, accounts[0])
-      await this.setState({ address: accounts[0] });
-    });
+      if (accounts[0] !== this.state.address)
+      {
+        store.setProvider(this.ethersProvider, this.state.chainId, accounts[0])
+        await this.setState({ address: accounts[0] });
+      }
+    })
 
     provider.on("chainChanged", async (chainId: number) => {
-      store.setProvider(this.ethersProvider, chainId, this.state.address)
-      await this.setState({ chainId });
-    });
+      if (chainId !== this.state.chainId)
+      {
+        store.setProvider()
+        await this.setup()
+      }
+    })
 
     provider.on("networkChanged", async (networkId: number) => {
       const network = await this.ethersProvider.getNetwork();
@@ -84,7 +91,7 @@ class App extends Component {
       const networkName = network.name;
       store.setProvider(this.ethersProvider, chainId, this.state.address)
       await this.setState({ chainId, networkName });
-    });
+    })
   };
 
   getProviderOptions = () => {
@@ -101,8 +108,10 @@ class App extends Component {
 
   setup = async () => {
     try {
-      this.web3Provider = await this.web3Modal.connect()
-      await this.subscribeProvider(this.web3Provider)
+      if (!this.web3Provider) {
+        this.web3Provider = await this.web3Modal.connect()
+        await this.subscribeProvider(this.web3Provider)
+      }
 
       this.ethersProvider = new ethers.providers.Web3Provider(this.web3Provider)
       const accounts = await this.ethersProvider.listAccounts()
@@ -127,6 +136,7 @@ class App extends Component {
   resetApp = async () => {
     store.setProvider()
     if (this.ethersProvider) {
+      localStorage.removeItem('walletconnect');
       this.ethersProvider = null;
       this.web3Provider = null;
     }
@@ -153,6 +163,7 @@ class App extends Component {
                   onDisconnect = {this.resetApp}
                   connected = {this.state.connected}
                   address = {this.state.address}
+                  networkName = {this.state.networkName}
                 />
                 {/* <Vaults /> */}
                 <StakeSimple
