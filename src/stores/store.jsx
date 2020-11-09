@@ -4,6 +4,7 @@ import {
   YELD_CONTRACT,
   YELD_RETIREMENT,
   YELD_STAKE,
+  YELD_UNSTAKE,
   ADDRESS_INDEX_CHANGED,
   CONNECTION_CHANGED,
   FILTER_AMOUNT,
@@ -50,6 +51,9 @@ class Store {
             break;
           case YELD_STAKE:
             this.stakeYeld(payload.content);
+            break;
+          case YELD_UNSTAKE:
+            this.unstakeYeld(payload.content);
             break;
           default: {
           }
@@ -172,13 +176,25 @@ class Store {
         await tx.wait();
       }
 
-      const gas = this.fromWei(await this.retirementYeldContract.estimateGas.stakeYeld(amountToStake))
       const tx = await this.retirementYeldContract.stakeYeld(amountToStake)
       await tx.wait();
 
       emitter.emit(YELD_STAKE)
     } catch (e) {
       emitter.emit(YELD_STAKE, { error: e.message })
+    }
+  }
+
+  unstakeYeld = async (amount) => {
+    try {
+      const amountToUnstake = this.toWei(amount)
+
+      const tx = await this.retirementYeldContract.unstake(amountToUnstake)
+      await tx.wait();
+
+      emitter.emit(YELD_UNSTAKE)
+    } catch (e) {
+      emitter.emit(YELD_UNSTAKE, { error: e.message })
     }
   }
 
@@ -248,20 +264,12 @@ class Store {
   }
 
   fromWei(number) {
-    const numberbn = ethers.BigNumber.from(number)
-    const base = numberbn.div(ethers.constants.WeiPerEther)
-    const decimals  = base.isZero() ? numberbn : numberbn.mod(base.mul(ethers.constants.WeiPerEther))
-    return Number(base.toString() + '.' + decimals.toString())
+    return parseFloat(ethers.utils.formatEther(number))
   }
 
   toWei(number) {
-    // ethers implementation does not support decimals
-    if (typeof number === 'number' && number % 1)
-    {
-      const decimals = (number % 1).toString().substr(2, 18)
-      number = Math.trunc(number) + decimals +'0'.repeat(18 - decimals.length)
-    }
-    return ethers.BigNumber.from(number)
+    const parsed = number.toFixed(18)
+    return ethers.utils.parseEther(parsed)
   }
 }
 
