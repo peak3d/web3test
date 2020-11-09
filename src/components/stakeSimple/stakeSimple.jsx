@@ -319,12 +319,16 @@ class StakeSimple extends Component {
     }
   }
 
-  onYeldStake = async () => {
+  onYeldStake = async (error) => {
     this.setState({stakeProcessing: false})
+    if (error === undefined)
+      this._requestData();
   }
 
-  onYeldUnstake = async () => {
+  onYeldUnstake = async (error) => {
     this.setState({unstakeProcessing: false})
+    if (error === undefined)
+      this._requestData();
   }
 
   _requestData() {
@@ -421,7 +425,9 @@ class StakeSimple extends Component {
                   disabled={this.state.yeldStakeAmount <= 0}
                   onClick={() => this.setState({ unstakeModalOpen: true })}>
                   <Typography variant={'h5'} color="secondary">
-                    Unstake Wallet
+                    {
+                    this.state.yeldStakeAmount > 0 ? 'Unstake Yeld' : 'Nothing to unstake'
+                    }
                   </Typography>
                 </Button>
               </Box>
@@ -577,9 +583,7 @@ class StakeSimple extends Component {
                     }
                     helperText={
                       this.state.unStakeAmount > this.state.yeldStakeAmount
-                        ? 'Enter a number less than ' + store.fromWei(
-                            String(this.state.retirementYeldCurrentStaked)
-                          ) + ' (Current Stake)'
+                        ? 'Enter a number less than ' + this.state.yeldStakeAmount + ' (Current Stake)'
                         : ''
                     }
                   />
