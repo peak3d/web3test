@@ -193,7 +193,7 @@ class Header extends Component {
 	}
 
 	onYeldContract = async (asset) => {
-    if (asset.yeldBurned)
+    if (asset.yeldBurned !== undefined)
       this.setState({ burnedBalance: asset.yeldBurned })
 	}
 

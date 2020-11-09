@@ -3,6 +3,7 @@ import {
   ERROR,
   YELD_CONTRACT,
   YELD_RETIREMENT,
+  YELD_STAKE,
   ADDRESS_INDEX_CHANGED,
   CONNECTION_CHANGED,
   FILTER_AMOUNT,
@@ -47,6 +48,9 @@ class Store {
           case YELD_RETIREMENT:
             this.getRetirementContractData(payload.content);
             break;
+          case YELD_STAKE:
+            this.stakeYeld(payload.content);
+            break;
           default: {
           }
         }
@@ -84,16 +88,18 @@ class Store {
        if (!chainAddresses)
          return false
 
-      if (this.chainId == 1) {
-        this.yDAIContract = new ethers.Contract(chainAddresses.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-        this.yTUSDContract = new ethers.Contract(chainAddresses.yTUSDAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-        this.yUSDTContract = new ethers.Contract(chainAddresses.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
-        this.yUSDCContract = new ethers.Contract(chainAddresses.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, this.ethersProvider)
+      const signer = this.ethersProvider.getSigner()
+
+      if (this.chainId === 1) {
+        this.yDAIContract = new ethers.Contract(chainAddresses.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
+        this.yTUSDContract = new ethers.Contract(chainAddresses.yTUSDAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
+        this.yUSDTContract = new ethers.Contract(chainAddresses.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
+        this.yUSDCContract = new ethers.Contract(chainAddresses.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
       }
 
       this.retirementYeldAddress = chainAddresses.retirementYeldAddresses[this.addressIndex];
-      this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, this.ethersProvider)
-      this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, this.ethersProvider)
+      this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, signer)
+      this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, signer)
       // Event listener if YELD is Transfered to burnAdress
       const filter = this.yeldContract.filters.Transfer(null,burnAddress);
       this.yeldContract.on(filter, (from, to, amount, event) => {
@@ -124,11 +130,11 @@ class Store {
         }
         else {
           var asset = {}
-          if (data[0])
+          if (data[0] !== null)
             asset.yeldAmount = data[0]
-          if (data[1])
+          if (data[1] !== null)
             asset.totalSupply = data[1]
-          if (data[2])
+          if (data[2] !== null)
             asset.yeldBurned = data[2]
           emitter.emit(YELD_CONTRACT, asset)
         }
@@ -143,19 +149,38 @@ class Store {
       ], (err, data) => {
         if (err) {
           console.log(err)
-          emitter.emit(ERROR, {error: err.toString()})
+          emitter.emit(ERROR, {error: err.message})
         }
         else {
           var asset = {}
-          if (data[0])
+          if (data[0] !== null)
             asset.stake = data[0]
-          if (data[1])
+          if (data[1] !== null)
             asset.balance = data[1]
           emitter.emit(YELD_RETIREMENT, asset)
         }
       })
   }
 
+  stakeYeld = async (amount) => {
+    try {
+      const allowance = await this.yeldContract.allowance(this.address, this.retirementYeldAddress)
+      const amountToStake = this.toWei(amount)
+
+      if (allowance.lt(amountToStake)) {
+        const tx = await this.yeldContract.approve(this.retirementYeldAddress, amountToStake)
+        await tx.wait();
+      }
+
+      const gas = this.fromWei(await this.retirementYeldContract.estimateGas.stakeYeld(amountToStake))
+      const tx = await this.retirementYeldContract.stakeYeld(amountToStake)
+      await tx.wait();
+
+      emitter.emit(YELD_STAKE)
+    } catch (e) {
+      emitter.emit(YELD_STAKE, { error: e.message })
+    }
+  }
 
   _getYeldAmount = async (filter, callback) => {
     if (!filter.includes(FILTER_AMOUNT))
@@ -227,6 +252,16 @@ class Store {
     const base = numberbn.div(ethers.constants.WeiPerEther)
     const decimals  = base.isZero() ? numberbn : numberbn.mod(base.mul(ethers.constants.WeiPerEther))
     return Number(base.toString() + '.' + decimals.toString())
+  }
+
+  toWei(number) {
+    // ethers implementation does not support decimals
+    if (typeof number === 'number' && number % 1)
+    {
+      const decimals = (number % 1).toString().substr(2, 18)
+      number = Math.trunc(number) + decimals +'0'.repeat(18 - decimals.length)
+    }
+    return ethers.BigNumber.from(number)
   }
 }
 

@@ -2,6 +2,7 @@
 export const ERROR = 'ERROR'
 export const YELD_CONTRACT = 'YELD_CHANGED' //includes some or all of: YELD wallet, total supply, burned
 export const YELD_RETIREMENT = 'YELD_RETIREMENT' //includes stake snapshot and ETH balance
+export const YELD_STAKE = 'YELD_STAKE' //perform stake / return stake result
 export const ADDRESS_INDEX_CHANGED = 'ADDRESS_INDEX_CHANGED'
 export const CONNECTION_CHANGED = 'CONNECTION_CHANGED'
 

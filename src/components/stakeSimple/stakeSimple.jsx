@@ -10,6 +10,7 @@ import { colors } from '../../theme'
 
 import { YELD_CONTRACT,
          YELD_RETIREMENT,
+         YELD_STAKE,
          CONNECTION_CHANGED,
          FILTER_AMOUNT,
          FILTER_BURNED,
@@ -253,6 +254,7 @@ const INITIAL_STATE = {
   hoursPassedAfterStaking: '00m 00s',
   stakeModalOpen: false,
   unstakeModalOpen: false,
+  stakeProcessing: false,
   stakeAmount: 0,
   unStakeAmount: 0,
 };
@@ -270,6 +272,7 @@ class StakeSimple extends Component {
   componentDidMount(prevProps) {
     emitter.on(YELD_CONTRACT, this.onYeldContract)
     emitter.on(YELD_RETIREMENT, this.onYeldRetirement)
+    emitter.on(YELD_STAKE, this.onYeldStake)
     emitter.on(CONNECTION_CHANGED, this.onConnectionChanged)
     if (store.isConnected())
       this._requestData()
@@ -278,28 +281,29 @@ class StakeSimple extends Component {
   componentWillUnmount() {
     emitter.removeListener(YELD_CONTRACT, this.onYeldContract)
     emitter.removeListener(YELD_RETIREMENT, this.onYeldRetirement)
+    emitter.removeListener(YELD_STAKE, this.onYeldStake)
     emitter.removeListener(CONNECTION_CHANGED, this.onConnectionChanged)
   }
 
   onYeldContract = async (asset) => {
     var newState = {}
-    if (asset.yeldAmount)
+    if (asset.yeldAmount !== undefined)
       newState.yeldBalance = asset.yeldAmount
-    if (asset.totalSupply)
+    if (asset.totalSupply !== undefined)
       newState.yeldTotalSupply = asset.totalSupply
-    if (asset.yeldBurned)
+    if (asset.yeldBurned !== undefined)
       newState.yeldBurned = asset.yeldBurned
     this.setState(newState)
   }
 
   onYeldRetirement = async (asset) => {
     var newState = {}
-    if (asset.stake) {
+    if (asset.stake !== undefined) {
       newState.yeldStakeAmount = store.fromWei(asset.stake.yeldBalance)
-      newState.stakeTimestamp = asset.stake.timestamp
+      newState.stakeTimestamp = asset.stake.timestamp.toNumber()
     }
-    if (asset.balance)
-      newState.ethRetirementBalanceETH = store.fromWei(asset.balance);
+    if (asset.balance !== undefined)
+      newState.ethRetirementBalance = store.fromWei(asset.balance);
     this.setState(newState)
   }
 
@@ -311,6 +315,10 @@ class StakeSimple extends Component {
     }
   }
 
+  onYeldStake = async () => {
+    this.setState({stakeProcessing: false})
+  }
+
   _requestData() {
     // Request yeld contract data
     dispatcher.dispatch({ type: YELD_CONTRACT, content: [FILTER_AMOUNT, FILTER_BURNED, FILTER_SUPPLY] })
@@ -318,9 +326,9 @@ class StakeSimple extends Component {
     dispatcher.dispatch({ type: YELD_RETIREMENT, content: [FILTER_BALANCE, FILTER_STAKE] })
   }
 
-  getRetirement = async () => {
+  getRetirement = () => {
     const {yeldStakeAmount, stakeTimestamp, yeldTotalSupply, yeldBurned, ethRetirementBalance} = this.state
-    const now = Date.now() / 1000
+    const now = Math.floor(Date.now() / 1000)
 
     //nothing staked -> disable
     if (yeldStakeAmount <= 0
@@ -334,7 +342,7 @@ class StakeSimple extends Component {
     const timeElapsed = now - stakeTimestamp
     if (timeElapsed < 86400) {
       const timeLeft = 86400 - timeElapsed;
-      return {timer: (timeLeft / 3600).toString() + ':' + (timeLeft % 3600).toString()}
+      return {timer: Math.trunc(timeLeft / 3600).toString() + ':' + Math.floor((timeLeft % 3600) / 60).toString()}
     }
 		const userPercentage = yeldStakeAmount / (yeldTotalSupply - yeldBurned)
     return {value: (ethRetirementBalance * userPercentage) / 100}
@@ -432,7 +440,7 @@ class StakeSimple extends Component {
 												<br />
 												<i>
 													{retirement.timer
-														? `Time left ${retirement.timer}`
+														? `Redeem unlocked in: ${retirement.timer} hours`
                           : ''}
 												</i>
 											</span>
@@ -491,65 +499,17 @@ class StakeSimple extends Component {
 											variant="outlined"
 											color="primary"
 											disabled={
-												this.state.stakeAmount <= 0 ||
+												Number(this.state.stakeAmount) <= 0 ||
 												Number(this.state.stakeAmount) >
 													Number(this.state.yeldBalance)
 											}
-											onClick={async () => {
-												try {
-													if (true/*await betaTesting()*/) {
-														/*const allowance = await window.yeld.methods
-															.allowance(
-																window.web3.eth.defaultAccount,
-																this.props.retirementYeld._address
-															)
-															.call()
-
-														const amountToStake = window.web3.utils.toWei(
-															String(this.state.stakeAmount)
-														)
-
-														if (Number(allowance) < Number(amountToStake)) {
-															await window.yeld.methods
-																.approve(
-																	this.props.retirementYeld._address,
-																	window.web3.utils.toWei(
-																		String(this.state.stakeAmount)
-																	)
-																)
-																.send({
-																	from: window.web3.eth.defaultAccount,
-																})
-																.on('transactionHash', () => {
-																	this.setState({ stakeProcessing: true })
-																})
-														}
-
-														await this.props.retirementYeld.methods
-															.stakeYeld(
-																window.web3.utils.toWei(
-																	String(this.state.stakeAmount)
-																)
-															)
-															.send({
-																from: window.web3.eth.defaultAccount,
-															})
-															.on('transactionHash', () => {
-																this.setState({ stakeProcessing: true })
-															})
-															.on('receipt', () => {
-																this.setState({ stakeProcessing: false })
-																window.location.reload()
-															})*/
-													} else {
-														alert(
-															"You can't use the dapp during the beta testing period if you hold less than 5 YELD"
-														)
-													}
-												} catch (error) {
-													this.setState({ stakeProcessing: false })
-												}
-											}}>
+											onClick={ async () => {
+                        if (!this.state.stakeProcessing) {
+                          this.setState({ stakeProcessing: true })
+                          dispatcher.dispatch({ type: YELD_STAKE, content: Number(this.state.stakeAmount) })
+                        }
+                      }
+                      }>
 											<Typography variant={'h5'} color="secondary">
 												{!this.state.stakeProcessing ? (
 													<div>Stake Amount</div>
