@@ -30,7 +30,7 @@ const INITIAL_STATE: IAppState = {
   connected: false,
   address: null,
   chainId: 1,
-  networkName: 'homestead',
+  networkName: 'mainnet',
 };
 
 class App extends Component {
