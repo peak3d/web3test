@@ -30,7 +30,7 @@ const INITIAL_STATE: IAppState = {
   connected: false,
   address: null,
   chainId: 1,
-  networkName: 'mainnet',
+  networkName: 'homestead',
 };
 
 class App extends Component {
@@ -47,7 +47,9 @@ class App extends Component {
     })
 
     this.ethersProvider = null
+    this.eventProvider = null
     this.web3Provider = null
+    console.log('InfuraId: ', process.env.REACT_APP_INFURA_ID)
   }
 
   componentDidMount() {
@@ -72,7 +74,7 @@ class App extends Component {
     provider.on("accountsChanged", async (accounts: string[]) => {
       if (accounts[0] !== this.state.address)
       {
-        store.setProvider(this.ethersProvider, this.state.chainId, accounts[0])
+        store.setProvider(this.ethersProvider, this.eventProvider, this.state.chainId, accounts[0])
         await this.setState({ address: accounts[0] });
       }
     })
@@ -89,7 +91,7 @@ class App extends Component {
       const network = await this.ethersProvider.getNetwork();
       const chainId = network.chainId;
       const networkName = network.name;
-      store.setProvider(this.ethersProvider, chainId, this.state.address)
+      store.setProvider(this.ethersProvider, this.eventProvider, chainId, this.state.address)
       await this.setState({ chainId, networkName });
     })
   };
@@ -119,6 +121,7 @@ class App extends Component {
       const network = await this.ethersProvider.getNetwork()
       const chainId = network.chainId
       const networkName = network.name
+      this.eventProvider = ethers.providers.InfuraProvider.getWebSocketProvider(networkName, process.env.REACT_APP_INFURA_ID);
 
       await this.setState({
         connected: true,
@@ -126,7 +129,7 @@ class App extends Component {
         chainId,
         networkName
       })
-      store.setProvider(this.ethersProvider, chainId, address)
+      store.setProvider(this.ethersProvider, this.eventProvider, chainId, address)
     } catch (e) {
       console.log(e)
       await this.resetApp()

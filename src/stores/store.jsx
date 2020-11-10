@@ -29,6 +29,7 @@ class Store {
   constructor() {
     this.addressIndex = 1
     this.ethersProvider = null
+    this.eventProvider = null
     this.address = null
     this.chainId = 1
 
@@ -70,12 +71,18 @@ class Store {
     }
   }
 
-  setProvider(provider, chainId, address) {
+  setProvider(provider, eventProvider, chainId, address) {
+    if (this.eventProvider)
+      this.eventProvider.removeAllListeners();
+
     this.ethersProvider = provider
+    this.eventProvider = eventProvider
     this.chainId = chainId
     this.address = address
     if (!this.setupContracts())
       this.ethersProvider = null
+    else
+      this.setupEvents()
     emitter.emit(CONNECTION_CHANGED, provider, address)
   }
 
@@ -111,12 +118,6 @@ class Store {
       this.retirementYeldAddress = chainAddresses.retirementYeldAddresses[this.addressIndex];
       this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, signer)
       this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, signer)
-      // Event listener if YELD is Transfered to burnAdress
-      const filter = this.yeldContract.filters.Transfer(null,burnAddress);
-      this.yeldContract.on(filter, (from, to, amount, event) => {
-        console.log('burn: ', from, ' -> ', to, 'Amt: ', amount)
-        this.getYeldContractData([FILTER_BURNED])
-      });
     } else {
       this.retirementYeldContract = null
       this.yDAIContract = null
@@ -126,6 +127,14 @@ class Store {
       this.yeldContract = null
     }
     return true
+  }
+
+  setupEvents() {
+    // Event listener if YELD is Transfered to burnAdress
+    const filter = this.yeldContract.filters.Transfer(null,burnAddress);
+    this.eventProvider.on(filter, (log, event) => {
+      this.getYeldContractData([FILTER_BURNED])
+    })
   }
 
   getYeldContractData(filter) {
