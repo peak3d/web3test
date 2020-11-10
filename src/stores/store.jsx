@@ -7,6 +7,9 @@ import {
   YELD_UNSTAKE,
   ADDRESS_INDEX_CHANGED,
   CONNECTION_CHANGED,
+  POOL_BALANCES,
+  POOL_INVEST,
+  POOL_REDEEM,
   FILTER_AMOUNT,
   FILTER_BURNED,
   FILTER_SUPPLY,
@@ -34,12 +37,80 @@ class Store {
     this.chainId = 1
 
     this.retirementYeldContract = null
-    this.retirementYeldAddress = null
-    this.yDAIContract = null
-    this.yTUSDContract = null
-    this.yUSDTContract = null
-    this.yUSDCContract = null
-    this.yeldContract = null
+
+    this.assets = [
+    {
+      id: 'DAIv2',
+      name: 'DAI',
+      symbol: 'DAI',
+      description: 'DAI Stablecoin',
+      investSymbol: 'yUSDC',
+      contract: null,
+      maxApr: 0,
+      balance: 0,
+      investedBalance: 0,
+      price: 0,
+      decimals: 18,
+      version: 2,
+      disabled: false,
+      invest: 'deposit',
+      redeem: 'withdraw',
+    },
+    {
+      id: 'USDCv2',
+      name: 'USD Coin',
+      symbol: 'USDC',
+      description: 'USD//C',
+      investSymbol: 'yUSDC',
+      contract: null,
+      maxApr: 0,
+      balance: 0,
+      investedBalance: 0,
+      price: 0,
+      decimals: 6,
+      poolValue: 0,
+      version: 2,
+      disabled: false,
+      invest: 'deposit',
+      redeem: 'withdraw',
+    },
+    {
+      id: 'USDTv2',
+      name: 'USDT',
+      symbol: 'USDT',
+      description: 'Tether USD',
+      investSymbol: 'yUSDT',
+      contract: null,
+      maxApr: 0,
+      balance: 0,
+      investedBalance: 0,
+      price: 0,
+      decimals: 6,
+      poolValue: 0,
+      version: 2,
+      disabled: false,
+      invest: 'deposit',
+      redeem: 'withdraw',
+    },
+    {
+      id: 'TUSDv2',
+      name: 'TUSD',
+      symbol: 'TUSD',
+      description: 'TrueUSD',
+      investSymbol: 'yTUSD',
+      contract: null,
+      maxApr: 0,
+      balance: 0,
+      investedBalance: 0,
+      price: 0,
+      decimals: 18,
+      poolValue: 0,
+      version: 2,
+      disabled: false,
+      invest: 'deposit',
+      redeem: 'withdraw',
+    },
+    ]
 
     dispatcher.register(
       function (payload) {
@@ -49,6 +120,9 @@ class Store {
             break;
           case YELD_RETIREMENT:
             this.getRetirementContractData(payload.content);
+            break;
+          case POOL_BALANCES:
+            this.getPoolBalances(payload.content);
             break;
           case YELD_STAKE:
             this.stakeYeld(payload.content);
@@ -61,6 +135,10 @@ class Store {
         }
       }.bind(this)
     )
+  }
+
+  getAssets = () => {
+    return this.assets
   }
 
   setYeldAddressIndex(index) {
@@ -81,7 +159,7 @@ class Store {
     this.address = address
     if (!this.setupContracts())
       this.ethersProvider = null
-    else
+    else if (eventProvider)
       this.setupEvents()
     emitter.emit(CONNECTION_CHANGED, provider, address)
   }
@@ -94,37 +172,22 @@ class Store {
     if (this.yeldContract)
       this.yeldContract.removeAllListeners()
 
+    this.assets.map((asset) => { asset.contract = null })
+
     if (this.ethersProvider) {
-       const chainAddresses = yeldConfig.addresses[this.chainId]
-       if (!chainAddresses)
-         return false
+      const chainAddresses = yeldConfig.addresses[this.chainId]
+      if (!chainAddresses)
+        return false
 
       const signer = this.ethersProvider.getSigner()
 
-      if (this.chainId === 1) {
-        this.yDAIContract = new ethers.Contract(chainAddresses.yDAIAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
-        this.yTUSDContract = new ethers.Contract(chainAddresses.yTUSDAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
-        this.yUSDTContract = new ethers.Contract(chainAddresses.yUSDTAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
-        this.yUSDCContract = new ethers.Contract(chainAddresses.yUSDCAddresses[this.addressIndex], yeldConfig.yDAIAbi, signer)
-      }
-      else
-      {
-        this.yDAIContract = null
-        this.yTUSDContract = null
-        this.yUSDTContract = null
-        this.yUSDCContract = null
-      }
+      this.assets.map((asset) => {
+        if (chainAddresses[asset.id][this.addressIndex] !== '')
+          asset.contract = new ethers.Contract(chainAddresses[asset.id][this.addressIndex], yeldConfig.yDAIAbi, signer)
+      })
 
-      this.retirementYeldAddress = chainAddresses.retirementYeldAddresses[this.addressIndex];
-      this.retirementYeldContract = new ethers.Contract(this.retirementYeldAddress, yeldConfig.retirementYeldAbi, signer)
+      this.retirementYeldContract = new ethers.Contract(chainAddresses.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, signer)
       this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, signer)
-    } else {
-      this.retirementYeldContract = null
-      this.yDAIContract = null
-      this.yTUSDContract = null
-      this.yUSDTContract = null
-      this.yUSDCContract = null
-      this.yeldContract = null
     }
     return true
   }
@@ -182,13 +245,38 @@ class Store {
       })
   }
 
+  getPoolBalances = async () => {
+    async.map(this.assets, (asset, callback) => {
+      async.parallel([
+        (callbackInner) => { this._getERC20Balance(asset, callbackInner) },
+        (callbackInner) => { this._getInvestedBalance(asset, callbackInner) },
+        (callbackInner) => { this._getPoolPrice(asset, callbackInner) },
+        (callbackInner) => { this._getMaxAPR(asset, callbackInner) },
+      ], (err, data) => {
+        asset.balance = data[0]
+        asset.investedBalance = data[1]
+        asset.price = data[2]
+        asset.maxApr = data[3]
+
+        callback(null, asset)
+      })
+    }, (err, assets) => {
+      if(err) {
+        return emitter.emit(ERROR, err)
+      }
+
+      return emitter.emit(POOL_BALANCES, assets)
+    })
+  }
+
   stakeYeld = async (amount) => {
     try {
-      const allowance = await this.yeldContract.allowance(this.address, this.retirementYeldAddress)
+      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses[this.addressIndex]
+      const allowance = await this.yeldContract.allowance(this.address, retirementYeldAddress)
       const amountToStake = this.toWei(amount)
 
       if (allowance.lt(amountToStake)) {
-        const tx = await this.yeldContract.approve(this.retirementYeldAddress, amountToStake)
+        const tx = await this.yeldContract.approve(retirementYeldAddress, amountToStake)
         await tx.wait();
       }
 
@@ -271,12 +359,29 @@ class Store {
       return callback(null, null)
 
     try {
-      const result = await this.ethersProvider.getBalance(this.retirementYeldAddress);
+      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses[this.addressIndex]
+      const result = await this.ethersProvider.getBalance(retirementYeldAddress);
       callback(null, result)
     } catch(e) {
       console.log(e)
       return callback(e)
     }
+  }
+
+  _getERC20Balance(asset, callbackInner) {
+    callbackInner(null,null);
+  }
+
+  _getInvestedBalance(asset, callbackInner){
+    callbackInner(null,null);
+  }
+
+  _getPoolPrice(asset, callbackInner){
+    callbackInner(null,null);
+  }
+
+  _getMaxAPR(asset, callbackInner){
+    callbackInner(null,null);
   }
 
   fromWei(number) {

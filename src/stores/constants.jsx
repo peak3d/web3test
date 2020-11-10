@@ -7,6 +7,11 @@ export const YELD_UNSTAKE = 'YELD_UNSTAKE' //perform unstake
 export const ADDRESS_INDEX_CHANGED = 'ADDRESS_INDEX_CHANGED'
 export const CONNECTION_CHANGED = 'CONNECTION_CHANGED'
 
+export const POOL_BALANCES = 'POOL_BALANCES'
+export const POOL_INVEST = 'POOL_INVEST'
+export const POOL_REDEEM = 'POOL_REDEEM'
+
+
 // Filter for TX
 export const FILTER_AMOUNT = 'AMOUNT'
 export const FILTER_BURNED = 'BURNED'

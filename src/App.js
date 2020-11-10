@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import './App.css';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import { unstable_createMuiStrictModeTheme as createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import { Box } from '@material-ui/core';
 import interestTheme from './theme';
 import { colors } from './theme'
 import {
@@ -12,6 +13,7 @@ import {
 import IpfsRouter from 'ipfs-react-router'
 import Header from './components/header';
 import StakeSimple from './components/stakeSimple';
+import InvestSimple from './components/investSimple';
 
 import { ethers } from 'ethers';
 import Web3Modal from 'web3modal';
@@ -49,10 +51,10 @@ class App extends Component {
     this.ethersProvider = null
     this.eventProvider = null
     this.web3Provider = null
-    console.log('InfuraId: ', process.env.REACT_APP_INFURA_ID)
   }
 
-  componentDidMount() {
+  componentDidMount = async () => {
+    await this.setState({mounted: true})
     if (this.web3Modal.cachedProvider) {
       this.setup()
     }
@@ -109,6 +111,9 @@ class App extends Component {
   }
 
   setup = async () => {
+    if (!this.state.mounted)
+      return
+
     try {
       if (!this.web3Provider) {
         this.web3Provider = await this.web3Modal.connect()
@@ -137,6 +142,9 @@ class App extends Component {
   }
 
   resetApp = async () => {
+    if (!this.state.mounted)
+      return
+
     store.setProvider()
     if (this.ethersProvider) {
       localStorage.removeItem('walletconnect');
@@ -170,6 +178,14 @@ class App extends Component {
                 />
                 {/* <Vaults /> */}
                 <StakeSimple
+                  connected = {this.state.connected}
+                />
+                <Box style={{
+                  width: "100%",
+                  border: "1px solid #e1e3e6",
+                  borderTop: "none", marginBottom: "30px"}}>
+                </Box>
+                <InvestSimple
                   connected = {this.state.connected}
                 />
               </Route>
