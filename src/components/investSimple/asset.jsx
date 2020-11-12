@@ -179,7 +179,7 @@ class Asset extends Component {
         <TextField
           fullWidth
           className={ classes.actionInput }
-          id={'amount' + asset.id}
+          id={'amount'}
           value={ amount }
           error={ amountError }
           onChange={ this.onChange }
@@ -244,7 +244,7 @@ class Asset extends Component {
         <TextField
           fullWidth
           className={ classes.actionInput }
-          id={'redeemAmount'+asset.id}
+          id={'redeemAmount'}
           value={ redeemAmount }
           error={ redeemAmountError }
           onChange={ this.onChange }
@@ -372,7 +372,9 @@ class Asset extends Component {
   inputKeyDown = (event) => {
     if (event.which === 13) {
       this.onInvest();
+      return true;
     }
+    return false;
   }
 
   onInvest = () => {

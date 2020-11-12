@@ -134,6 +134,9 @@ class Store {
           case POOL_INVEST:
             this.poolInvest(payload);
             break;
+          case POOL_REDEEM:
+            this.poolRedeem(payload);
+            break;
           case YELD_STAKE:
             this.stakeYeld(payload.content);
             break;
@@ -260,21 +263,24 @@ class Store {
       })
   }
 
-  getPoolBalances = async () => {
+  getPoolBalances = async (filter) => {
     async.map(this.assets, (asset, callback) => {
-      async.parallel([
-        (callbackInner) => { this._getERC20Balance(asset, callbackInner) },
-        (callbackInner) => { this._getInvestedBalance(asset, callbackInner) },
-        (callbackInner) => { this._getPoolPrice(asset, callbackInner) },
-        (callbackInner) => { this._getMaxAPR(asset, callbackInner) },
-      ], (err, data) => {
-        asset.balance = data[0]
-        asset.investedBalance = data[1]
-        asset.price = data[2]
-        asset.maxApr = data[3]
+      if (filter.id === undefined || filter.id === asset.id){
+        async.parallel([
+          (callbackInner) => { this._getERC20Balance(asset, callbackInner) },
+          (callbackInner) => { this._getInvestedBalance(asset, callbackInner) },
+          (callbackInner) => { this._getPoolPrice(asset, callbackInner) },
+          (callbackInner) => { this._getMaxAPR(asset, callbackInner) },
+        ], (err, data) => {
+          asset.balance = data[0]
+          asset.investedBalance = data[1]
+          asset.price = data[2]
+          asset.maxApr = data[3]
 
+          callback(null, asset)
+        })
+      } else
         callback(null, asset)
-      })
     }, (err, assets) => {
       if(err) {
         return emitter.emit(ERROR, err)
@@ -322,20 +328,34 @@ class Store {
 
       const { asset, amount } = payload.content
       const investAmount = this.toWei(amount, asset.decimals)
-      const investAmountEth = this.toWei('999999999999')
       const allowance = await asset.tokenContract.allowance(this.address, asset.contract.address)
 
-      if (allowance.lt(investAmountEth)) {
-        const tx = await asset.tokenContract.approve(asset.contract.address, investAmountEth)
+      if (allowance.lt(investAmount)) {
+        const tx = await asset.tokenContract.approve(asset.contract.address, investAmount)
         await tx.wait();
       }
 
-      const fn = asset.contract.functions[asset.invest]
-      const tx = await asset.contract.deposit(investAmount)
+      const tx = await asset.contract.functions[asset.invest](investAmount)
       emitter.emit(POOL_HASH, tx.hash)
 
       await tx.wait();
-      emitter.emit(POOL_INVEST)
+      emitter.emit(POOL_INVEST, {id: asset.id, hash: tx.hash})
+    } catch (e) {
+      emitter.emit(ERROR, e)
+    }
+  }
+
+  poolRedeem = async (payload) => {
+    try {
+
+      const { asset, amount } = payload.content
+      const redeemAmount = this.toWei(amount, asset.decimals)
+
+      const tx = await asset.contract.functions[asset.redeem](redeemAmount)
+      emitter.emit(POOL_HASH, tx.hash)
+
+      await tx.wait();
+      emitter.emit(POOL_REDEEM, {id: asset.id, hash: tx.hash})
     } catch (e) {
       emitter.emit(ERROR, e)
     }
@@ -434,7 +454,7 @@ class Store {
   }
 
   _getPoolPrice = async (asset, callback) => {
-    //if (!asset.contract)
+    if (!asset.contract)
       return callback(null, 0)
 
     try {
