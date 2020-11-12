@@ -59,6 +59,7 @@ class Store {
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
+      yeldEarned: 0,
     },
     {
       id: 'USDCv2',
@@ -78,6 +79,7 @@ class Store {
       disabled: false,
       invest: 'deposit(uint256)',
       redeem: 'withdraw(uint256)',
+      yeldEarned: 0,
     },
     {
       id: 'USDTv2',
@@ -97,6 +99,7 @@ class Store {
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
+      yeldEarned: 0,
     },
     {
       id: 'TUSDv2',
@@ -116,6 +119,7 @@ class Store {
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
+      yeldEarned: 0,
     },
     ]
 
@@ -271,11 +275,13 @@ class Store {
           (callbackInner) => { this._getInvestedBalance(asset, callbackInner) },
           (callbackInner) => { this._getPoolPrice(asset, callbackInner) },
           (callbackInner) => { this._getMaxAPR(asset, callbackInner) },
+          (callbackInner) => { this._getYeldEarned(asset, callbackInner) },
         ], (err, data) => {
           asset.balance = data[0]
           asset.investedBalance = data[1]
           asset.price = data[2]
           asset.maxApr = data[3]
+          asset.yeldEarned = data[4]
 
           callback(null, asset)
         })
@@ -339,7 +345,7 @@ class Store {
       emitter.emit(POOL_HASH, tx.hash)
 
       await tx.wait();
-      emitter.emit(POOL_INVEST, {id: asset.id, hash: tx.hash})
+      emitter.emit(POOL_INVEST, {id: asset.id, txHash: tx.hash})
     } catch (e) {
       emitter.emit(ERROR, e)
     }
@@ -355,7 +361,7 @@ class Store {
       emitter.emit(POOL_HASH, tx.hash)
 
       await tx.wait();
-      emitter.emit(POOL_REDEEM, {id: asset.id, hash: tx.hash})
+      emitter.emit(POOL_REDEEM, {id: asset.id, txHash: tx.hash})
     } catch (e) {
       emitter.emit(ERROR, e)
     }
@@ -467,7 +473,48 @@ class Store {
   }
 
   _getMaxAPR = async (asset, callback) => {
-    callback(null,null);
+    //if (!asset.contract)
+      return callback(null, 0)
+
+    /*let aprContract = new web3.eth.Contract(config.aggregatedContractABI, config.aggregatedContractAddress)
+
+    var call = 'getAPROptions';//+asset.symbol
+    var address = asset.erc20address
+    var aprs = 0;
+    if (asset.erc20address === 'Ethereum') {
+      call = 'getETH';
+      aprs = await aprContract.methods[call]().call();
+    } else {
+      aprs = await aprContract.methods[call](address).call();
+    }
+
+
+    const keys = Object.keys(aprs)
+    const workKeys = keys.filter((key) => {
+      return isNaN(key)
+    })
+    const maxApr = Math.max.apply(Math, workKeys.map(function(o) {
+      if(o === 'uniapr' || o === 'unicapr' || o === "iapr") {
+        return aprs[o]-100000000000000000000
+      }
+      return aprs[o];
+    }))
+
+    callback(null, web3.utils.fromWei(maxApr.toFixed(0), 'ether'))
+    */
+  }
+ 
+  _getYeldEarned = async (asset, callback) =>{
+    if (!asset.contract)
+      return callback(null, 0)
+
+    try {
+      const balance = await asset.contract.getGeneratedYelds();
+      callback(null, this.fromWei(balance))
+    } catch(ex) {
+      console.log(ex)
+      return callback(ex)
+    }
   }
 
   fromWei(number, decimals = 18) {

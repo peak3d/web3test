@@ -407,15 +407,16 @@ class InvestSimple extends Component {
     dispatcher.dispatch({ type: POOL_BALANCES, content: result })
   };
 
-  redeemReturned = (txHash) => {
+  redeemReturned = (result) => {
     const snackbarObj = { snackbarMessage: null, snackbarType: null }
     this.setState(snackbarObj)
     this.setState({ loading: false })
     const that = this
     setTimeout(() => {
-      const snackbarObj = { snackbarMessage: txHash, snackbarType: 'Hash' }
+      const snackbarObj = { snackbarMessage: result.txHash, snackbarType: 'Hash' }
       that.setState(snackbarObj)
     })
+    dispatcher.dispatch({ type: POOL_BALANCES, content: result })
   };
 
   render() {

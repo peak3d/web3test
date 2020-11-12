@@ -109,32 +109,6 @@ class Asset extends Component {
       redeemAmountError: false,
       generatedYELD: 0,
     }
-
-    this.getYeldEarned()
-    setInterval(() => this.getYeldEarned(), 1e3)
-  }
-
-  async getYeldEarned() {
-    let generatedYELD
-    switch (this.props.asset.symbol) {
-      /*case 'DAI':
-        generatedYELD = await this.props.yDAI.methods.getGeneratedYelds().call()
-        break
-      case 'USDC':
-        generatedYELD = await this.props.yUSDC.methods.getGeneratedYelds().call()
-        break
-      case 'USDT':
-        generatedYELD = await this.props.yUSDT.methods.getGeneratedYelds().call()
-        break
-      case 'TUSD':
-        generatedYELD = await this.props.yTUSD.methods.getGeneratedYelds().call()
-        break*/
-      default:
-        generatedYELD = 0
-    }
-    /*this.setState({
-      generatedYELD: window.web3.utils.fromWei(generatedYELD),
-    })*/
   }
 
   componentWillMount() {
@@ -238,9 +212,9 @@ class Asset extends Component {
       </div>
       <div className={ classes.sepperator }></div>
       <div className={classes.tradeContainer}>
-        <div className={ classes.balances }>
+        {!asset.disabled && <div className={ classes.balances }>
           <Typography variant='h3' className={ classes.title }></Typography><Typography variant='h4' onClick={ () => { this.setRedeemAmount(100) } }  className={ classes.value } noWrap>{ asset.investedBalance ? asset.investedBalance.toFixed(4) : '0.0000' } { asset.investSymbol } ({ asset.investedBalance ? (parseFloat(asset.investedBalance)*parseFloat(asset.price)).toFixed(4) : '0' } { asset.tokenSymbol ? asset.tokenSymbol : asset.symbol } )</Typography>
-        </div>
+        </div>}
         <TextField
           fullWidth
           className={ classes.actionInput }
@@ -248,7 +222,7 @@ class Asset extends Component {
           value={ redeemAmount }
           error={ redeemAmountError }
           onChange={ this.onChange }
-          disabled={ loading }
+          disabled={ loading || asset.disabled }
           placeholder="0.00"
           variant="outlined"
           onKeyDown={ this.inputRedeemKeyDown }
@@ -257,7 +231,7 @@ class Asset extends Component {
           <Button
             className={ classes.scale }
             variant='text'
-            disabled={ loading }
+            disabled={ loading || asset.disabled }
             color="primary"
             onClick={ () => { this.setRedeemAmount(25) } }>
             <Typography variant={'h5'}>25%</Typography>
@@ -265,7 +239,7 @@ class Asset extends Component {
           <Button
             className={ classes.scale }
             variant='text'
-            disabled={ loading }
+            disabled={ loading || asset.disabled}
             color="primary"
             onClick={ () => { this.setRedeemAmount(50) } }>
             <Typography variant={'h5'}>50%</Typography>
@@ -273,7 +247,7 @@ class Asset extends Component {
           <Button
             className={ classes.scale }
             variant='text'
-            disabled={ loading }
+            disabled={ loading || asset.disabled}
             color="primary"
             onClick={ () => { this.setRedeemAmount(75) } }>
             <Typography variant={'h5'}>75%</Typography>
@@ -281,7 +255,7 @@ class Asset extends Component {
           <Button
             className={ classes.scale }
             variant='text'
-            disabled={ loading }
+            disabled={ loading || asset.disabled}
             color="primary"
             onClick={ () => { this.setRedeemAmount(100) } }>
             <Typography variant={'h5'}>100%</Typography>
@@ -291,74 +265,15 @@ class Asset extends Component {
           className={ classes.actionButton }
           variant="outlined"
           color="primary"
-          disabled={ loading || !connected || redeemAmount <= 0 }
+          disabled={ loading || !connected || redeemAmount <= 0 || asset.disabled}
           onClick={ async () => {
               this.onRedeem()
           }}
           fullWidth
           >
-          <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>{ t('Asset.Claim') }</Typography>
+          <Typography className={ classes.buttonText } variant={ 'h5'} color={asset.disabled?'':'secondary'}>{ asset.disabled? t('Asset.Disabled'):t('Asset.Claim') }</Typography>
         </Button>
-        {this.state.generatedYELD} YELD earned
-        {/* <Button
-          className={ classes.actionButton }
-          style={{marginTop: '10px'}}
-          variant="outlined"
-          color="primary"
-          disabled={ loading || !account.address || redeemAmount <= 0 }
-          onClick={async () => {
-            if(await this.betaTesting()) {
-              let generatedYELD
-              switch (asset.symbol) {
-                case 'DAI':
-                  generatedYELD = await this.props.yDAI.methods.getGeneratedYelds().call()
-                  if (generatedYELD > 0) {
-                    this.props.yDAI.methods.extractYELDEarningsWhileKeepingDeposit().send({
-                      from: window.web3.eth.defaultAccount,
-                    })
-                  } else {
-                    alert('No YELD to redeem yet, wait for a full day to redeem your YELD')
-                  }
-                  break
-                case 'USDC':
-                  generatedYELD = await this.props.yUSDC.methods.getGeneratedYelds().call()
-                  if (generatedYELD > 0) {
-                    this.props.yUSDC.methods.extractYELDEarningsWhileKeepingDeposit().send({
-                      from: window.web3.eth.defaultAccount,
-                    })
-                  } else {
-                    alert('No YELD to redeem yet, wait for a full day to redeem your YELD')
-                  }
-                  break
-                case 'USDT':
-                  generatedYELD = await this.props.yUSDT.methods.getGeneratedYelds().call()
-                  if (generatedYELD > 0) {
-                    this.props.yUSDT.methods.extractYELDEarningsWhileKeepingDeposit().send({
-                      from: window.web3.eth.defaultAccount,
-                    })
-                  } else {
-                    alert('No YELD to redeem yet, wait for a full day to redeem your YELD')
-                  }
-                  break
-                case 'TUSD':
-                  generatedYELD = await this.props.yTUSD.methods.getGeneratedYelds().call()
-                  if (generatedYELD > 0) {
-                    this.props.yTUSD.methods.extractYELDEarningsWhileKeepingDeposit().send({
-                      from: window.web3.eth.defaultAccount,
-                    })
-                  } else {
-                    alert('No YELD to redeem yet, wait for a full day to redeem your YELD')
-                  }
-                  break
-              }
-            } else {
-              alert("You can't use the dapp during the beta testing period if you hold less than 5 YELD")
-            }
-          }}
-          fullWidth
-          >
-          <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Redeem Earnings & Restake</Typography>
-        </Button> */}
+        {asset.yeldEarned.toFixed(4)} YELD earned
       </div>
     </div>)
   };
@@ -380,8 +295,11 @@ class Asset extends Component {
   onInvest = () => {
     this.setState({ amountError: false })
 
-    const { amount } = this.state
+    var { amount } = this.state
     const { asset, startLoading } = this.props
+
+    if (amount > asset.balance && amount - asset.balance < 1E-4)
+      amount = asset.balance;
 
     if(!amount || isNaN(amount) || amount <= 0 || amount > asset.balance) {
       this.setState({ amountError: true })
@@ -396,8 +314,11 @@ class Asset extends Component {
   onRedeem = () => {
     this.setState({ redeemAmountError: false })
 
-    const { redeemAmount } = this.state
+    var { redeemAmount } = this.state
     const { asset, startLoading  } = this.props
+
+    if (redeemAmount > asset.investedBalance && redeemAmount - asset.investedBalance < 1E-4)
+      redeemAmount = asset.investedBalance;
 
     if(!redeemAmount || isNaN(redeemAmount) || redeemAmount <= 0 || redeemAmount > asset.investedBalance) {
       this.setState({ redeemAmountError: true })
@@ -424,7 +345,6 @@ class Asset extends Component {
     if(percent === 100 && asset.symbol === 'ETH') {
         amount = amount - 0.009
     }
-    amount = Math.floor(amount*10000)/10000;
     this.setState({ amount: amount.toFixed(4) })
   }
 
@@ -435,8 +355,7 @@ class Asset extends Component {
     }
 
     const balance = this.props.asset.investedBalance
-    let amount = balance*percent/100
-    amount = Math.floor(amount*10000)/10000;
+    let amount = (balance*percent)/100
 
     this.setState({ redeemAmount: amount.toFixed(4) })
   }

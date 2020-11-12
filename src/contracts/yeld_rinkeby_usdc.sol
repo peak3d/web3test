@@ -534,7 +534,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
       _totalSupply = _totalSupply.sub(_shares);
       emit Transfer(msg.sender, address(0), _shares);
       uint256 b = IERC20(token).balanceOf(address(this));
-      if (b < stablecoinsToWithdraw) {
+      if (b <= stablecoinsToWithdraw) {
         _withdrawSome(stablecoinsToWithdraw.sub(b));
       }
 
