@@ -310,11 +310,10 @@ const styles = (theme) => ({
 class InvestSimple extends Component {
 
   constructor(props) {
-    super()
+    super(props)
 
     this.state = {
       assets: store.getAssets(),
-      connected: false,
       snackbarType: null,
       snackbarMessage: null,
       hideV1: true,
@@ -489,13 +488,9 @@ class InvestSimple extends Component {
 
   renderAssetBlocksv2 = () => {
     const { assets, expanded } = this.state
-    const { classes, t } = this.props
+    const { classes, t, connected } = this.props
     const width = window.innerWidth
-    return assets.filter((asset) => {
-      return (asset.version === 2)
-    }).filter((asset) => {
-      return !(asset.symbol === "iDAI")
-    }).map((asset) => {
+    return assets.map((asset) => {
       return (
         <Accordion className={ classes.expansionPanel } square key={ asset.id+"_expand" } expanded={ expanded === asset.id} onChange={ () => { this.handleChange(asset.id) } }>
           <AccordionSummary
@@ -547,8 +542,7 @@ class InvestSimple extends Component {
             <Asset
               asset={ asset }
               startLoading={ this.startLoading }
-              retirementYeld={this.props.retirementYeld}
-              connected={this.state.connected}
+              connected={connected}
             />
           </AccordionDetails>
         </Accordion>

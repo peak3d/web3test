@@ -1,0 +1,26 @@
+{
+  "InvestSimple.Intro": "Ganhe juros. Simples.",
+  "InvestSimple.Connect": "Conectar carteira",
+  "InvestSimple.Show": "Mostrar V1",
+  "InvestSimple.Hide": "Ocultar V1",
+  "InvestSimple.InterestRate": "Taxa de juros",
+  "InvestSimple.AvailableBalance": "Saldo disponível",
+
+  "Asset.InterestRate": "Taxa de juros",
+  "Asset.AvailableBalance": "Saldo disponível",
+  "Asset.Disabled": "Disabled",
+  "Asset.Earn": "Ganhe",
+  "Asset.Claim": "Claim",
+  "Asset.Deposit": "Depósito",
+  "Asset.Withdraw": "Retirar",
+  "Asset.ClaimRewards": "Claim Rewards",
+
+  "Unlock.Deactivate": "Deactivate",
+  "Unlock.WalletConnected": "Carteira conectada com sucesso.",
+
+  "Snackbar.Error": "Erro",
+  "Snackbar.Warning": "Warning",
+  "Snackbar.Info": "Info",
+  "Snackbar.Succecss": "Sucesso",
+  "Snackbar.Hash": "Hash"
+}

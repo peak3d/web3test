@@ -10,6 +10,7 @@ import {
   POOL_BALANCES,
   POOL_INVEST,
   POOL_REDEEM,
+  POOL_HASH,
   FILTER_AMOUNT,
   FILTER_BURNED,
   FILTER_SUPPLY,
@@ -17,6 +18,7 @@ import {
   FILTER_STAKE,
 } from './constants'
 
+import config from '../config/config'
 import yeldConfig from '../config/yeldConfig'
 
 const ethers = require('ethers');
@@ -37,6 +39,7 @@ class Store {
     this.chainId = 1
 
     this.retirementYeldContract = null
+    this.yeldContract = null
 
     this.assets = [
     {
@@ -46,6 +49,7 @@ class Store {
       description: 'DAI Stablecoin',
       investSymbol: 'yUSDC',
       contract: null,
+      tokenContract: null,
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
@@ -63,6 +67,7 @@ class Store {
       description: 'USD//C',
       investSymbol: 'yUSDC',
       contract: null,
+      tokenContract: null,
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
@@ -71,8 +76,8 @@ class Store {
       poolValue: 0,
       version: 2,
       disabled: false,
-      invest: 'deposit',
-      redeem: 'withdraw',
+      invest: 'deposit(uint256)',
+      redeem: 'withdraw(uint256)',
     },
     {
       id: 'USDTv2',
@@ -81,6 +86,7 @@ class Store {
       description: 'Tether USD',
       investSymbol: 'yUSDT',
       contract: null,
+      tokenContract: null,
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
@@ -99,6 +105,7 @@ class Store {
       description: 'TrueUSD',
       investSymbol: 'yTUSD',
       contract: null,
+      tokenContract: null,
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
@@ -123,6 +130,9 @@ class Store {
             break;
           case POOL_BALANCES:
             this.getPoolBalances(payload.content);
+            break;
+          case POOL_INVEST:
+            this.poolInvest(payload);
             break;
           case YELD_STAKE:
             this.stakeYeld(payload.content);
@@ -172,7 +182,7 @@ class Store {
     if (this.yeldContract)
       this.yeldContract.removeAllListeners()
 
-    this.assets.map((asset) => { asset.contract = null })
+    this.assets.map((asset) => { asset.contract = asset.tokenContract = null })
 
     if (this.ethersProvider) {
       const chainAddresses = yeldConfig.addresses[this.chainId]
@@ -182,8 +192,13 @@ class Store {
       const signer = this.ethersProvider.getSigner()
 
       this.assets.map((asset) => {
-        if (chainAddresses[asset.id][this.addressIndex] !== '')
-          asset.contract = new ethers.Contract(chainAddresses[asset.id][this.addressIndex], yeldConfig.yDAIAbi, signer)
+        if (chainAddresses[asset.id].yeld[this.addressIndex] !== '') {
+          asset.contract = new ethers.Contract(chainAddresses[asset.id].yeld[this.addressIndex], yeldConfig.yDAIAbi[this.chainId], signer)
+          asset.tokenContract = new ethers.Contract(chainAddresses[asset.id].token, config.erc20ABI, signer)
+          asset.disabled = false
+        } else {
+          asset.disabled = true
+        }
       })
 
       this.retirementYeldContract = new ethers.Contract(chainAddresses.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, signer)
@@ -302,6 +317,30 @@ class Store {
     }
   }
 
+  poolInvest = async (payload) => {
+    try {
+
+      const { asset, amount } = payload.content
+      const investAmount = this.toWei(amount, asset.decimals)
+      const investAmountEth = this.toWei('999999999999')
+      const allowance = await asset.tokenContract.allowance(this.address, asset.contract.address)
+
+      if (allowance.lt(investAmountEth)) {
+        const tx = await asset.tokenContract.approve(asset.contract.address, investAmountEth)
+        await tx.wait();
+      }
+
+      const fn = asset.contract.functions[asset.invest]
+      const tx = await asset.contract.deposit(investAmount)
+      emitter.emit(POOL_HASH, tx.hash)
+
+      await tx.wait();
+      emitter.emit(POOL_INVEST)
+    } catch (e) {
+      emitter.emit(ERROR, e)
+    }
+  }
+
   _getYeldAmount = async (filter, callback) => {
     if (!filter.includes(FILTER_AMOUNT))
       return callback(null, null)
@@ -368,29 +407,56 @@ class Store {
     }
   }
 
-  _getERC20Balance(asset, callbackInner) {
-    callbackInner(null,null);
+  _getERC20Balance = async (asset, callback) => {
+    if (!asset.contract)
+      return callback(null, 0)
+
+    try {
+      const balance = await asset.tokenContract.balanceOf(this.address);
+      callback(null, this.fromWei(balance, asset.decimals))
+    } catch(ex) {
+      console.log(ex)
+      return callback(ex)
+    }
   }
 
-  _getInvestedBalance(asset, callbackInner){
-    callbackInner(null,null);
+  _getInvestedBalance = async (asset, callback) =>{
+    if (!asset.contract)
+      return callback(null, 0)
+
+    try {
+      const balance = await asset.contract.balanceOf(this.address);
+      callback(null, this.fromWei(balance, asset.decimals))
+    } catch(ex) {
+      console.log(ex)
+      return callback(ex)
+    }
   }
 
-  _getPoolPrice(asset, callbackInner){
-    callbackInner(null,null);
+  _getPoolPrice = async (asset, callback) => {
+    //if (!asset.contract)
+      return callback(null, 0)
+
+    try {
+      const balance = await asset.contract.getPricePerFullShare();
+      callback(null, this.fromWei(balance))
+    } catch(ex) {
+      console.log(ex)
+      return callback(ex)
+    }
   }
 
-  _getMaxAPR(asset, callbackInner){
-    callbackInner(null,null);
+  _getMaxAPR = async (asset, callback) => {
+    callback(null,null);
   }
 
-  fromWei(number) {
-    return parseFloat(ethers.utils.formatEther(number))
+  fromWei(number, decimals = 18) {
+    return parseFloat(ethers.utils.formatUnits(number, decimals))
   }
 
-  toWei(number) {
-    const parsed = number.toFixed(18)
-    return ethers.utils.parseEther(parsed)
+  toWei(number, decimals = 18) {
+    const parsed = typeof number === 'number'? number.toFixed(decimals) : number
+    return ethers.utils.parseUnits(parsed, decimals)
   }
 }
 

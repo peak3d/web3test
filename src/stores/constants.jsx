@@ -10,6 +10,7 @@ export const CONNECTION_CHANGED = 'CONNECTION_CHANGED'
 export const POOL_BALANCES = 'POOL_BALANCES'
 export const POOL_INVEST = 'POOL_INVEST'
 export const POOL_REDEEM = 'POOL_REDEEM'
+export const POOL_HASH = 'POOL_HASH'
 
 
 // Filter for TX
