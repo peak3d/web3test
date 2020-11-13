@@ -289,6 +289,7 @@ interface Compound {
     function mint ( uint256 mintAmount ) external returns ( uint256 );
     function redeem(uint256 redeemTokens) external returns (uint256);
     function exchangeRateStored() external view returns (uint);
+    function supplyRatePerBlock() external view returns (uint256);
 }
 
 /*interface Fulcrum {
@@ -502,7 +503,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
       // Yeld
       depositBlockStarts[msg.sender] = block.number;
       // Yeld
-      
+
       // Calculate pool shares
       uint256 shares = 0;
       if (pool == 0) {
@@ -525,7 +526,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
       uint256 ibalance = balanceOf(msg.sender);
       require(_shares <= ibalance, "insufficient balance");
       // Could have over value from cTokens
-      pool = _calcPoolValueInToken();
+      pool = _calcPoolValueInToken(); //USDC
       // Yeld
       uint256 generatedYelds = getGeneratedYelds();
       // Yeld
@@ -537,7 +538,6 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
       if (b <= stablecoinsToWithdraw) {
         _withdrawSome(stablecoinsToWithdraw.sub(b));
       }
-
 
       // Yeld
       // Take 1% of the amount to withdraw
@@ -735,12 +735,14 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
     }*/
   }
 
-  function _withdrawSomeCompound(uint256 _amount) internal {
-    uint256 b = balanceCompound();
-    uint256 bT = balanceCompoundInToken();
-    require(bT >= _amount, "insufficient funds");
+  function _withdrawSomeCompound(uint256 usdcAmount) internal {
+    uint256 b = balanceCompound(); // #cUSDC
+    uint256 bT = balanceCompoundInToken(); //#USDC
+    require(bT >= usdcAmount, "insufficient funds");
     // can have unintentional rounding errors
-    uint256 amount = (b.mul(_amount)).div(bT).add(1);
+    uint256 amount = (b.mul(usdcAmount)).div(bT).add(1); //share in cUSDC
+    if (amount > b)
+     amount = b;
     _withdrawCompound(amount);
   }
 
@@ -779,7 +781,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
     if (newProvider != provider) {
       _withdrawAll();
     }
-    
+
     _rebalance(newProvider);
   }
 
@@ -863,7 +865,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
   }
 
   // Redeem any invested tokens from the pool
-  function redeem(uint256 _shares)
+  /*function redeem(uint256 _shares)
       external
       nonReentrant
   {
@@ -901,5 +903,26 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard/*, Structs*/, Ownable {
         _rebalance(newProvider);
       }
       pool = calcPoolValueInToken();
+  }*/
+
+  function getAPROptions(address) public view returns(
+    uint256 uniapr,
+    uint256 capr,
+    uint256 unicapr,
+    uint256 iapr,
+    uint256 uniiapr,
+    uint256 aapr,
+    uint256 uniaapr,
+    uint256 dapr)
+  {
+    return (
+      0,
+      Compound(compound).supplyRatePerBlock() * 2102400,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0);
   }
 }

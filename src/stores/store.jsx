@@ -473,21 +473,12 @@ class Store {
   }
 
   _getMaxAPR = async (asset, callback) => {
-    //if (!asset.contract)
+    if (!asset.contract)
       return callback(null, 0)
 
-    /*let aprContract = new web3.eth.Contract(config.aggregatedContractABI, config.aggregatedContractAddress)
+    let aprContract = new ethers.Contract(this.chainId === 4 ? asset.contract.address : config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
 
-    var call = 'getAPROptions';//+asset.symbol
-    var address = asset.erc20address
-    var aprs = 0;
-    if (asset.erc20address === 'Ethereum') {
-      call = 'getETH';
-      aprs = await aprContract.methods[call]().call();
-    } else {
-      aprs = await aprContract.methods[call](address).call();
-    }
-
+    const aprs = await aprContract.getAPROptions(asset.tokenContract.address);
 
     const keys = Object.keys(aprs)
     const workKeys = keys.filter((key) => {
@@ -500,8 +491,7 @@ class Store {
       return aprs[o];
     }))
 
-    callback(null, web3.utils.fromWei(maxApr.toFixed(0), 'ether'))
-    */
+    callback(null, this.fromWei(maxApr.toFixed(0)))
   }
  
   _getYeldEarned = async (asset, callback) =>{
