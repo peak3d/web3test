@@ -5,6 +5,7 @@ import {
   YELD_RETIREMENT,
   YELD_STAKE,
   YELD_UNSTAKE,
+  YELD_REDEEM,
   ADDRESS_INDEX_CHANGED,
   CONNECTION_CHANGED,
   POOL_BALANCES,
@@ -146,6 +147,9 @@ class Store {
             break;
           case YELD_UNSTAKE:
             this.unstakeYeld(payload.content);
+            break;
+          case YELD_REDEEM:
+            this.redeemYeld(payload.content);
             break;
           default: {
           }
@@ -326,6 +330,17 @@ class Store {
       emitter.emit(YELD_UNSTAKE)
     } catch (e) {
       emitter.emit(YELD_UNSTAKE, { error: e.message })
+    }
+  }
+
+  redeemYeld = async (amount) => {
+    try {
+      const tx = await this.retirementYeldContract.redeemETH()
+      await tx.wait();
+
+      emitter.emit(YELD_REDEEM)
+    } catch (e) {
+      emitter.emit(YELD_REDEEM, { error: e.message })
     }
   }
 

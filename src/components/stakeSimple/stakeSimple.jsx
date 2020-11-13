@@ -12,6 +12,7 @@ import { YELD_CONTRACT,
          YELD_RETIREMENT,
          YELD_STAKE,
          YELD_UNSTAKE,
+         YELD_REDEEM,
          CONNECTION_CHANGED,
          FILTER_AMOUNT,
          FILTER_BURNED,
@@ -276,6 +277,7 @@ class StakeSimple extends Component {
     emitter.on(YELD_RETIREMENT, this.onYeldRetirement)
     emitter.on(YELD_STAKE, this.onYeldStake)
     emitter.on(YELD_UNSTAKE, this.onYeldUnstake)
+    emitter.on(YELD_REDEEM, this.onYeldRedeem)
     emitter.on(CONNECTION_CHANGED, this.onConnectionChanged)
     if (store.isConnected())
       this._requestData()
@@ -286,6 +288,7 @@ class StakeSimple extends Component {
     emitter.removeListener(YELD_RETIREMENT, this.onYeldRetirement)
     emitter.removeListener(YELD_STAKE, this.onYeldStake)
     emitter.removeListener(YELD_UNSTAKE, this.onYeldUnstake)
+    emitter.removeListener(YELD_REDEEM, this.onYeldRedeem)
     emitter.removeListener(CONNECTION_CHANGED, this.onConnectionChanged)
   }
 
@@ -329,6 +332,11 @@ class StakeSimple extends Component {
     this.setState({unstakeProcessing: false})
     if (error === undefined)
       this._requestData();
+  }
+
+  onYeldRedeem = async (error) => {
+    if (error === undefined)
+      dispatcher.dispatch({ type: YELD_RETIREMENT, content: [FILTER_BALANCE] })
   }
 
   _requestData() {
@@ -435,15 +443,7 @@ class StakeSimple extends Component {
                 <Button
                   disabled={!retirement.value}
                   onClick={async () => {
-                    if (true /*await betaTesting()*/) {
-                      //await this.props.retirementYeld.methods.redeemETH().send({
-                      //  from: window.web3.eth.defaultAccount,
-                      //})
-                    } else {
-                      alert(
-                        "You can't use the dapp during the beta testing period if you hold less than 5 YELD"
-                      )
-                    }
+                    dispatcher.dispatch({ type: YELD_REDEEM, content: ''})
                   }}>
                   <Typography
                     variant={'h5'}
