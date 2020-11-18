@@ -491,7 +491,7 @@ class Store {
     if (!asset.contract)
       return callback(null, 0)
 
-    let aprContract = new ethers.Contract(this.chainId === 4 ? asset.contract.address : config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
+    let aprContract = new ethers.Contract(this.chainId !== 1 ? asset.contract.address : config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
 
     const aprs = await aprContract.getAPROptions(asset.tokenContract.address);
 
@@ -510,7 +510,7 @@ class Store {
   }
  
   _getYeldEarned = async (asset, callback) =>{
-    if (!asset.contract)
+    //if (!asset.contract)
       return callback(null, 0)
 
     try {

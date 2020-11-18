@@ -2,7 +2,7 @@
  *Submitted for verification at Etherscan.io on 2020-10-17
 */
 
-pragma solidity 0.5.17;
+pragma solidity 0.6.0;
 
 contract Context {
     constructor () internal { }
@@ -121,7 +121,8 @@ contract RetirementYeldTreasury is Ownable {
 	uint256 public totalStaked;
 
   // Fallback function to receive payments
-  function () external payable {}
+  fallback() external payable {}
+  receive() external payable {}
 
   // To set the YELD contract address
   constructor (address _yeld) public {
