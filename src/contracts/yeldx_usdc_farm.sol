@@ -274,7 +274,9 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   address[] investors;
   address public currentInvestor;
   address currentPoolToken;
-  address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b;
+  //address public assetToken = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; //mainnet
+  //address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b; //rinkeby
+  address public assetToken = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C; //ropsten
   
   event Invest(address token, uint256 amountIn, uint256 amountOut);
   event Redeem(address token, uint256 amountIn, uint256 amountOut);
@@ -338,10 +340,10 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
 
     investors.push(investor);
     // Approve: allow investor ctoken to withdraw assetTokens owned by this
-    IERC20(assetToken).safeApprove(IInvestor(investor).getPoolToken(assetToken), uint(-1));
+    IERC20(assetToken).safeApprove(newPoolToken, uint(-1));
     if (investors.length == 1){
       currentInvestor = investor;
-      currentPoolToken = IInvestor(investor).getPoolToken(assetToken);
+      currentPoolToken = newPoolToken;
       // invest all assets
       _invest(IERC20(assetToken).balanceOf(address(this)));
     }

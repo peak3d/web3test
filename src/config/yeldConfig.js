@@ -25,8 +25,8 @@ export default {
      // Ropsten
     3: {
       DAIv2: {
-        yeld:['',''],
-        token: '',
+        yeld:['','0x98c2a42dEF062A692D53A4D122a25881dBa9448e'],
+        token: '0x31F42841c2db5173425b5223809CF3A38FEde360',
       },
       TUSDv2: {
         yeld: ['',''],

@@ -28,12 +28,24 @@ library SafeMath {
 
 contract CompoundLender {
   using SafeMath for uint256;
+  /*//mainnnet
+  address constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+  address constant cusdc = 0x39AA39c021dfbaE8faC545936693aC917d5E7563;
+  address constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+  address constant cdai = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+  address constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+  address constant cusdt = 0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9;
+  */
   /*// rinkeby
   address constant usdc = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b;
   address constant cusdc = 0x5B281A6DdA0B271e91ae35DE655Ad301C976edb1;
+  address constant dai = 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa;
+  address constant cdai = 0x6D7F0754FFeb405d23C51CE938289d4835bE3b14;
+  address constant usdt = 0xD9BA894E0097f8cC2BBc9D24D308b98e36dc6D02;
+  address constant cusdt = 0x2fB298BDbeF468638AD6653FF8376575ea41e768;
   */
   // ropsten
-  address constant usdc = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
+  address constant usdc = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C;
   address constant cusdc = 0x8aF93cae804cC220D1A608d4FA54D1b6ca5EB361;
   address constant dai = 0x31F42841c2db5173425b5223809CF3A38FEde360;
   address constant cdai = 0x8354C3a332FFB24E3A27be252E01aCFE65A33B35;
