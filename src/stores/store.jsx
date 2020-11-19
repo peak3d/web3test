@@ -17,6 +17,8 @@ import {
   FILTER_SUPPLY,
   FILTER_BALANCE,
   FILTER_STAKE,
+  FILTER_POOL,
+  FILTER_APR,
 } from './constants'
 
 import config from '../config/config'
@@ -275,10 +277,10 @@ class Store {
     async.map(this.assets, (asset, callback) => {
       if (filter.id === undefined || filter.id === asset.id){
         async.parallel([
-          (callbackInner) => { this._getERC20Balance(asset, callbackInner) },
-          (callbackInner) => { this._getInvestedBalance(asset, callbackInner) },
-          (callbackInner) => { this._getPoolPrice(asset, callbackInner) },
-          (callbackInner) => { this._getMaxAPR(asset, callbackInner) },
+          (callbackInner) => { this._getERC20Balance(asset, filter.items, callbackInner) },
+          (callbackInner) => { this._getInvestedBalance(asset, filter.items, callbackInner) },
+          (callbackInner) => { this._getPoolPrice(asset, filter.items, callbackInner) },
+          (callbackInner) => { this._getMaxAPR(asset, filter.items, callbackInner) },
           (callbackInner) => { this._getYeldEarned(asset, callbackInner) },
         ], (err, data) => {
           asset.balance = data[0]
@@ -448,9 +450,9 @@ class Store {
     }
   }
 
-  _getERC20Balance = async (asset, callback) => {
-    if (!asset.contract)
-      return callback(null, 0)
+  _getERC20Balance = async (asset, filter, callback) => {
+    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_BALANCE)))
+      return callback(null, asset.balance)
 
     try {
       const balance = await asset.tokenContract.balanceOf(this.address);
@@ -461,9 +463,9 @@ class Store {
     }
   }
 
-  _getInvestedBalance = async (asset, callback) =>{
-    if (!asset.contract)
-      return callback(null, 0)
+  _getInvestedBalance = async (asset, filter, callback) =>{
+    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_STAKE)))
+      return callback(null, asset.investedBalance)
 
     try {
       const balance = await asset.contract.balanceOf(this.address);
@@ -474,9 +476,9 @@ class Store {
     }
   }
 
-  _getPoolPrice = async (asset, callback) => {
-    if (!asset.contract)
-      return callback(null, 0)
+  _getPoolPrice = async (asset, filter, callback) => {
+    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_POOL)))
+      return callback(null, asset.price)
 
     try {
       const balance = await asset.contract.getPricePerFullShare();
@@ -487,26 +489,32 @@ class Store {
     }
   }
 
-  _getMaxAPR = async (asset, callback) => {
-    if (!asset.contract)
-      return callback(null, 0)
+  _getMaxAPR = async (asset, filter, callback) => {
+    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_APR)))
+      return callback(null, asset.maxApr)
 
-    let aprContract = new ethers.Contract(this.chainId !== 1 ? asset.contract.address : config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
+    if (this.chainId == 1) {
 
-    const aprs = await aprContract.getAPROptions(asset.tokenContract.address);
+      let aprContract = new ethers.Contract(config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
 
-    const keys = Object.keys(aprs)
-    const workKeys = keys.filter((key) => {
-      return isNaN(key)
-    })
-    const maxApr = Math.max.apply(Math, workKeys.map(function(o) {
-      if(o === 'uniapr' || o === 'unicapr' || o === "iapr") {
-        return aprs[o]-100000000000000000000
-      }
-      return aprs[o];
-    }))
+      const aprs = await aprContract.getAPROptions(asset.tokenContract.address);
 
-    callback(null, this.fromWei(maxApr.toFixed(0)))
+      const keys = Object.keys(aprs)
+      const workKeys = keys.filter((key) => {
+        return isNaN(key)
+      })
+      const maxApr = Math.max.apply(Math, workKeys.map(function(o) {
+        if(o === 'uniapr' || o === 'unicapr' || o === "iapr") {
+          return aprs[o]-100000000000000000000
+        }
+        return aprs[o];
+      }))
+
+      callback(null, this.fromWei(maxApr.toFixed(0)))
+    } else {
+      const maxApr = await asset.contract.getApr();
+      callback(null, this.fromWei(maxApr));
+    }
   }
  
   _getYeldEarned = async (asset, callback) =>{

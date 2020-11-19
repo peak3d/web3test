@@ -22,6 +22,10 @@ import {
   POOL_BALANCES,
   POOL_INVEST,
   POOL_REDEEM,
+  FILTER_BALANCE,
+  FILTER_STAKE,
+  FILTER_POOL,
+  FILTER_APR,
   CONNECTION_CHANGED,
 } from '../../stores/constants'
 
@@ -378,8 +382,8 @@ class InvestSimple extends Component {
   connectionChanged = (provider) => {
     if (provider){
       const { t } = this.props
-      dispatcher.dispatch({ type: POOL_BALANCES, content: {} })
-      const snackbarObj = { snackbarMessage: t("Unlock.WalletConnected"), snackbarType: 'Info' }
+      dispatcher.dispatch({ type: POOL_BALANCES, content: {items:[FILTER_BALANCE, FILTER_APR] } } )
+      const snackbarObj = { snackbarMessage: t("Unlock.WalletConnected"), snackbarType: 'Info', expanded: null}
       this.setState(snackbarObj)
     }
   };
@@ -404,7 +408,7 @@ class InvestSimple extends Component {
       const snackbarObj = { snackbarMessage: result.txHash, snackbarType: 'Hash' }
       that.setState(snackbarObj)
     })
-    dispatcher.dispatch({ type: POOL_BALANCES, content: result })
+    dispatcher.dispatchs({ type: POOL_BALANCES, content: result })
   };
 
   redeemReturned = (result) => {
@@ -553,7 +557,10 @@ class InvestSimple extends Component {
   }
 
   handleChange = (id) => {
-    this.setState({ expanded: this.state.expanded === id ? null : id })
+    const expandedId = this.state.expanded === id ? null : id
+    this.setState({ expanded: expandedId })
+    if (expandedId)
+      dispatcher.dispatch({ type: POOL_BALANCES, content: {id: expandedId, items:[FILTER_STAKE, FILTER_POOL] } } )
   }
 
   startLoading = () => {

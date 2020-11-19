@@ -20,3 +20,6 @@ export const FILTER_BURNED = 'BURNED'
 export const FILTER_SUPPLY = 'SUPPLY'
 export const FILTER_BALANCE = 'BALANCE'
 export const FILTER_STAKE = 'STAKE'
+export const FILTER_POOL = 'POOL'
+export const FILTER_APR = 'APR'
+

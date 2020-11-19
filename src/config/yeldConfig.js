@@ -59,7 +59,7 @@ export default {
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0x6B3FB1210C618DF5527abc204FD820349307ab03'],
+        yeld: ['', '0x50be3d312E1c6c89CBD39D9a8ba2FbD25F303670'],
         token: '0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b',
       },
       retirementYeldAddresses: ['0x675A9305785a94B22b4a0e9a98e7970231262eAd','0x675A9305785a94B22b4a0e9a98e7970231262eAd'],
@@ -558,6 +558,19 @@ export default {
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getApr",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "name",
@@ -697,6 +710,19 @@ export default {
         }
       ],
       "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getApr",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },

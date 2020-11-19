@@ -275,26 +275,35 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   address public currentInvestor;
   address currentPoolToken;
   //address public assetToken = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; //mainnet
-  //address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b; //rinkeby
-  address public assetToken = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C; //ropsten
-  
+  address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b; //rinkeby
+  //address public assetToken = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C; //ropsten
+
+  // marketing
+  struct UserData {
+    uint256 investedAsset;
+    uint256 depositStartBlock;
+  }
+  mapping(address => UserData) userData;
+  uint256 public marketingRate = 0; //0% marketing
+  uint256 public investedAsset = 0;
+
   event Invest(address token, uint256 amountIn, uint256 amountOut);
   event Redeem(address token, uint256 amountIn, uint256 amountOut);
 
   constructor () public ERC20Detailed("YELD USDC", "yUSDC", 6) {
     // Initialize totalSupply with 1 to avoid 0 conditions
   }
-  
+
   // To receive ETH after converting it from USDC
   fallback () external payable{}
   receive() external payable {}
-  
+
   function withdrawAll() public onlyOwner {
     // ASSETS
     if (currentInvestor != address(0)) {
       _redeem(IERC20(currentPoolToken).balanceOf(address(this)));
       // tranfer all of them back to holders (/*todo*/)
-      IERC20(assetToken).transfer(msg.sender, IERC20(assetToken).balanceOf(address(this)));  
+      IERC20(assetToken).transfer(msg.sender, IERC20(assetToken).balanceOf(address(this)));
     }
     // ETH
     owner().transfer(address(this).balance);
@@ -303,9 +312,14 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   function deposit(uint256 _amount) external {
     require(_amount > 0, "deposit must be greater than 0");
     require(currentInvestor != address(0), "deposit: No Investor");
-    uint256 shares = _totalSupply > 0 ? (_amount.mul(_totalSupply)).div(_getAssetAmount()) : _amount;
+    uint256 shares = _totalSupply > 0 ? (_amount.mul(_totalSupply.add(getMarketingFee()))).div(_getAssetAmount()) : _amount; //y
     _mint(msg.sender, shares);
-   
+
+    UserData storage data = userData[msg.sender];
+    data.investedAsset = data.investedAsset.add(_amount);
+    data.depositStartBlock = block.number;
+    investedAsset = investedAsset.add(_amount);
+
     // Transfer asset from user to this contract
     IERC20(assetToken).safeTransferFrom(msg.sender, address(this), _amount);
     // Invest using delegate
@@ -317,10 +331,18 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     require(_shares > 0, "withdraw must be greater than 0");
     require(currentInvestor != address(0), "withdraw: No Investor");
 
-    //pool tokens to withdraw
-    uint256 poolAmount = (IERC20(currentPoolToken).balanceOf(address(this)).mul(_shares)).div(_totalSupply);
-    _burn(msg.sender, _shares);
+    // pool tokens to withdraw
+    uint256 poolAmount = (IERC20(currentPoolToken).balanceOf(address(this)).mul(_shares)).div(_totalSupply.add(getMarketingFee()));
+
+    _burn(msg.sender, _shares); // will throw in case sender has insufficient shares
+
     uint256 assetAmount = _redeem(poolAmount);
+
+    // how much does this refer to medium invested asset?
+    UserData storage data = userData[msg.sender];
+    uint256 withdrawAsset = (data.investedAsset.mul(_shares)).div(_shares.add(balanceOf(msg.sender)));
+    data.investedAsset = data.investedAsset.sub(withdrawAsset);
+    investedAsset = investedAsset.sub(withdrawAsset);
 
     // Send assets back to sender
     IERC20(assetToken).safeTransfer(msg.sender, assetAmount);
@@ -329,7 +351,7 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   function addInvestor(address investor) external onlyOwner {
     address newPoolToken = IInvestor(investor).getPoolToken(assetToken);
     require(newPoolToken != address(0), "Invalid Investor");
-    
+
     // Check if we simply replace / update
     for (uint i=0;i<investors.length; i++){
       if (newPoolToken == IInvestor(investors[i]).getPoolToken(assetToken)){
@@ -375,39 +397,38 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     }
   }
 
-  function getPricePerFullShare() public view returns (uint) {
-    return _totalSupply > 0 ? _getAssetAmount().mul(1e18).div(_totalSupply) : 0;
+  function setMarketingRate(uint256 _marketingRate) external onlyOwner{
+    marketingRate = _marketingRate;
   }
 
-  function getAPROptions(address) public view returns(
-    uint256 uniapr,
-    uint256 capr,
-    uint256 unicapr,
-    uint256 iapr,
-    uint256 uniiapr,
-    uint256 aapr,
-    uint256 uniaapr,
-    uint256 dapr)
-  {
-    return (
-      0,
-      IInvestor(currentInvestor).getApr(assetToken),
-      0,
-      0,
-      0,
-      0,
-      0,
-      0);
+  function getPricePerFullShare() public view returns (uint256) {
+    return _totalSupply > 0 ? (_getAssetAmount().mul(1e18)).div(_totalSupply.add(getMarketingFee())) : 0;
+  }
+
+  // returns #shares earned
+  function getMarketingFee() public view returns (uint256) {
+    uint256 assetAmount = _getAssetAmount();
+    return (((assetAmount.sub(investedAsset)).mul(marketingRate).mul(_totalSupply)).div(assetAmount)).div(1e18);
+  }
+
+  function getUserData() public view returns (uint256 assetIn, uint256 blockStart) {
+    return (userData[msg.sender].investedAsset, userData[msg.sender].depositStartBlock);
+  }
+
+  function getApr() public view returns(uint256) {
+    return IInvestor(currentInvestor).getApr(assetToken);
   }
 
   // return total amount of underlying asset (assetToken)
-  function _getAssetAmount() internal view returns (uint256)
+  function _getAssetAmount() public view returns (uint256)
   {
-    return (IERC20(currentPoolToken).balanceOf(address(this))
+    uint256 assetAmount = (IERC20(currentPoolToken).balanceOf(address(this))
       .mul(IInvestor(currentInvestor).getExchangeRate(assetToken))).div(1e18);
+    // Fix muldiv inaccuraties
+    return assetAmount >= investedAsset ? assetAmount : investedAsset;
   }
-  
-  function _invest(uint256 assetAmount) internal returns (uint256) {
+
+  function _invest(uint256 assetAmount) private returns (uint256) {
     if (assetAmount > 0) {
       (bool success, bytes memory result) = currentInvestor.delegatecall(
         abi.encodeWithSelector(IInvestor(currentInvestor).invest.selector, assetToken, assetAmount));
@@ -418,8 +439,8 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     }
     return 0;
   }
-  
-  function _redeem(uint256 poolAmount) internal returns (uint256) {
+
+  function _redeem(uint256 poolAmount) private returns (uint256) {
     if (poolAmount > 0) {
       (bool success, bytes memory result) = currentInvestor.delegatecall(
         abi.encodeWithSelector(IInvestor(currentInvestor).redeem.selector, assetToken, poolAmount));
