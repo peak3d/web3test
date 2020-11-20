@@ -4,21 +4,23 @@ import { withStyles } from '@material-ui/core/styles';
 import {
   Typography,
   TextField,
-  Button
+  Button,
+  IconButton
 } from '@material-ui/core';
+import AutorenewIcon from '@material-ui/icons/Autorenew';
+
 import { withTranslation } from 'react-i18next';
 
 import {
   ERROR,
   POOL_INVEST,
   POOL_REDEEM,
+  POOL_BALANCES,
 } from '../../stores/constants'
 
 import Store from "../../stores";
 const emitter = Store.emitter
 const dispatcher = Store.dispatcher
-const store = Store.store
-
 
 const styles = theme => ({
   value: {
@@ -57,6 +59,8 @@ const styles = theme => ({
   sepperator: {
     borderBottom: '1px solid #E1E1E1',
     margin: '24px',
+    display: 'flex',
+    alignItems: 'center',
     [theme.breakpoints.up('sm')]: {
       width: '40px',
       borderBottom: 'none',
@@ -210,7 +214,11 @@ class Asset extends Component {
         </Button>
         <div style={{textAlign: 'center'}}>Depositing new tokens will reset your rewards! Claim them first before depositing</div>
       </div>
-      <div className={ classes.sepperator }></div>
+      <div className={ classes.sepperator }>
+        <IconButton onClick={ this.onReload } disabled={ loading || !connected || asset.disabled}>
+          <AutorenewIcon/>
+        </IconButton>
+      </div>
       <div className={classes.tradeContainer}>
         {!asset.disabled && <div className={ classes.balances }>
           <Typography variant='h3' className={ classes.title }></Typography><Typography variant='h4' onClick={ () => { this.setRedeemAmount(100) } }  className={ classes.value } noWrap>{ asset.investedBalance ? asset.investedBalance.toFixed(4) : '0.0000' } { asset.investSymbol } ({ asset.investedBalance ? (parseFloat(asset.investedBalance)*parseFloat(asset.price)).toFixed(4) : '0' } { asset.tokenSymbol ? asset.tokenSymbol : asset.symbol } )</Typography>
@@ -329,6 +337,11 @@ class Asset extends Component {
     startLoading()
 
     dispatcher.dispatch({ type: POOL_REDEEM, content: { amount: redeemAmount, asset: asset } })
+  }
+
+  onReload = () => {
+    const { asset } = this.props
+    dispatcher.dispatch({ type: POOL_BALANCES, content: { id: asset.id } })
   }
 
   setAmount = (percent) => {

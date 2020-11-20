@@ -195,7 +195,10 @@ class Store {
     if (this.yeldContract)
       this.yeldContract.removeAllListeners()
 
-    this.assets.map((asset) => { asset.contract = asset.tokenContract = null })
+    this.assets.map((asset) => {
+      asset.contract = asset.tokenContract = null
+      return true
+    })
 
     if (this.ethersProvider) {
       const chainAddresses = yeldConfig.addresses[this.chainId]
@@ -212,6 +215,7 @@ class Store {
         } else {
           asset.disabled = true
         }
+        return true
       })
 
       this.retirementYeldContract = new ethers.Contract(chainAddresses.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, signer)
@@ -493,7 +497,7 @@ class Store {
     if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_APR)))
       return callback(null, asset.maxApr)
 
-    if (this.chainId == 1) {
+    if (this.chainId === 1) {
 
       let aprContract = new ethers.Contract(config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
 
@@ -516,7 +520,7 @@ class Store {
       callback(null, this.fromWei(maxApr));
     }
   }
- 
+
   _getYeldEarned = async (asset, callback) =>{
     //if (!asset.contract)
       return callback(null, 0)

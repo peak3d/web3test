@@ -8,7 +8,6 @@ import {
   AccordionSummary
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import Fade from '@material-ui/core/Fade';
 
 import { withTranslation } from 'react-i18next';
 import { colors } from '../../theme'
