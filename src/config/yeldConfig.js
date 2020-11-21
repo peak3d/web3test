@@ -59,7 +59,7 @@ export default {
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0x50be3d312E1c6c89CBD39D9a8ba2FbD25F303670'],
+        yeld: ['', '0xD4B73902AbB0662Eff6c097f38Ce111251379aa7'],
         token: '0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b',
       },
       retirementYeldAddresses: ['0x675A9305785a94B22b4a0e9a98e7970231262eAd','0x675A9305785a94B22b4a0e9a98e7970231262eAd'],
@@ -528,9 +528,8 @@ export default {
       "type": "function"
     },
     {
-      "constant": true,
       "inputs": [],
-      "name": "getGeneratedYelds",
+      "name": "getTokensEarned",
       "outputs": [
         {
           "internalType": "uint256",
@@ -538,7 +537,6 @@ export default {
           "type": "uint256"
         }
       ],
-      "payable": false,
       "stateMutability": "view",
       "type": "function"
     },
@@ -684,9 +682,8 @@ export default {
       "type": "function"
     },
     {
-      "constant": true,
       "inputs": [],
-      "name": "getGeneratedYelds",
+      "name": "getTokensEarned",
       "outputs": [
         {
           "internalType": "uint256",
@@ -694,7 +691,6 @@ export default {
           "type": "uint256"
         }
       ],
-      "payable": false,
       "stateMutability": "view",
       "type": "function"
     },

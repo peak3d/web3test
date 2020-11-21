@@ -522,11 +522,11 @@ class Store {
   }
 
   _getYeldEarned = async (asset, callback) =>{
-    //if (!asset.contract)
+    if (!asset.contract)
       return callback(null, 0)
 
     try {
-      const balance = await asset.contract.getGeneratedYelds();
+      const balance = await (this.chainId == 1 ? asset.contract.getGeneratedYelds() : asset.contract.getTokensEarned());
       callback(null, this.fromWei(balance))
     } catch(ex) {
       console.log(ex)

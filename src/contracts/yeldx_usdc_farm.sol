@@ -266,10 +266,20 @@ interface IInvestor {
   function getPoolToken(address token) external view returns (address);
 }
 
+interface IMarketing {
+  function onDeposit(uint256 amount) external;
+  function onWithdraw(uint256 amount) external;
+  function calculateTokensEarned(uint256 amount, uint256 share, uint256 depositStartBlock) external view returns (uint256); //1e18
+  function lockEarnedTokens(uint256 tokenCount) external;
+}
+
 contract yUSDC is ERC20, ERC20Detailed, Ownable {
   using SafeERC20 for IERC20;
   using Address for address;
   using SafeMath for uint256;
+
+  bool paused = false; // pause deposit / withdraw
+  uint256 constant to18 = 1e12;
 
   address[] investors;
   address public currentInvestor;
@@ -282,12 +292,15 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   struct UserData {
     uint256 investedAsset;
     uint256 depositStartBlock;
+    uint256 tokensEarned;
   }
   mapping(address => UserData) userData;
-  uint256 public marketingRate = 0; //0% marketing
+  uint256 public marketingRate = 500000000000000000; //50% marketing
   uint256 public investedAsset = 0;
+  uint256 public drainedMarketingFee = 0;
+  address marketingAddress;
 
-  event Invest(address token, uint256 amountIn, uint256 amountOut);
+  event Invest(address  token, uint256 amountIn, uint256 amountOut);
   event Redeem(address token, uint256 amountIn, uint256 amountOut);
 
   constructor () public ERC20Detailed("YELD USDC", "yUSDC", 6) {
@@ -311,13 +324,17 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
 
   function deposit(uint256 _amount) external {
     require(_amount > 0, "deposit must be greater than 0");
-    require(currentInvestor != address(0), "deposit: No Investor");
-    uint256 shares = _totalSupply > 0 ? (_amount.mul(_totalSupply.add(getMarketingFee()))).div(_getAssetAmount()) : _amount; //y
+    require (!paused, "operations paused");
+
+    // first lock token rewards
+    _lockEarnedTokens();
+
+    (uint256 netAssetAmount,) = _getNetAssetAmount();
+    uint256 shares = _totalSupply > 0 ? (_amount.mul(_totalSupply)).div(netAssetAmount) : _amount; //y
     _mint(msg.sender, shares);
 
     UserData storage data = userData[msg.sender];
     data.investedAsset = data.investedAsset.add(_amount);
-    data.depositStartBlock = block.number;
     investedAsset = investedAsset.add(_amount);
 
     // Transfer asset from user to this contract
@@ -329,10 +346,13 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   function withdraw(uint256 _shares) external
   {
     require(_shares > 0, "withdraw must be greater than 0");
-    require(currentInvestor != address(0), "withdraw: No Investor");
+    require (!paused, "operations paused");
+
+    // first lock token rewards
+    _lockEarnedTokens();
 
     // pool tokens to withdraw
-    uint256 poolAmount = (IERC20(currentPoolToken).balanceOf(address(this)).mul(_shares)).div(_totalSupply.add(getMarketingFee()));
+    uint256 poolAmount = (IERC20(currentPoolToken).balanceOf(address(this)).mul(_shares)).div(_totalSupply);
 
     _burn(msg.sender, _shares); // will throw in case sender has insufficient shares
 
@@ -343,6 +363,13 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     uint256 withdrawAsset = (data.investedAsset.mul(_shares)).div(_shares.add(balanceOf(msg.sender)));
     data.investedAsset = data.investedAsset.sub(withdrawAsset);
     investedAsset = investedAsset.sub(withdrawAsset);
+
+    // We have sold full tokens, hold back the marketing fee!
+    if (assetAmount > withdrawAsset) {
+      uint256 marketingFee = (assetAmount.sub(withdrawAsset).mul(marketingRate)).div(1e18);
+      assetAmount -= marketingFee;
+      drainedMarketingFee += marketingFee;
+    }
 
     // Send assets back to sender
     IERC20(assetToken).safeTransfer(msg.sender, assetAmount);
@@ -401,14 +428,17 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     marketingRate = _marketingRate;
   }
 
-  function getPricePerFullShare() public view returns (uint256) {
-    return _totalSupply > 0 ? (_getAssetAmount().mul(1e18)).div(_totalSupply.add(getMarketingFee())) : 0;
+  function setMarketingAddress(address _marketingAddress) external onlyOwner{
+    marketingAddress = _marketingAddress;
   }
 
-  // returns #shares earned
-  function getMarketingFee() public view returns (uint256) {
-    uint256 assetAmount = _getAssetAmount();
-    return (((assetAmount.sub(investedAsset)).mul(marketingRate).mul(_totalSupply)).div(assetAmount)).div(1e18);
+  function setPause(bool _pause) external onlyOwner {
+    paused = _pause;
+  }
+
+  function getPricePerFullShare() public view returns (uint256) {
+    (uint256 netAssetAmount,) = _getNetAssetAmount();
+    return _totalSupply > 0 ? (netAssetAmount.mul(1e18)).div(_totalSupply) : 0;
   }
 
   function getUserData() public view returns (uint256 assetIn, uint256 blockStart) {
@@ -419,13 +449,50 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     return IInvestor(currentInvestor).getApr(assetToken);
   }
 
-  // return total amount of underlying asset (assetToken)
-  function _getAssetAmount() public view returns (uint256)
-  {
+  function getTokensEarned() external view returns (uint256) {
+    UserData storage data = userData[msg.sender];
+    return data.depositStartBlock > 0
+      ? data.tokensEarned.add(IMarketing(marketingAddress)
+          .calculateTokensEarned(data.investedAsset.mul(to18),
+          (balanceOf(msg.sender).mul(1e18)).div(_totalSupply),
+          data.depositStartBlock))
+      : 0;
+  }
+
+  // called on deposit / withdraw time
+  function _lockEarnedTokens() private {
+    UserData storage data = userData[msg.sender];
+    if (data.depositStartBlock > 0) {
+      uint256 tokensEarned = IMarketing(marketingAddress)
+        .calculateTokensEarned(data.investedAsset.mul(to18),
+        (balanceOf(msg.sender).mul(1e18)).div(_totalSupply),
+        data.depositStartBlock);
+      data.tokensEarned = data.tokensEarned.add(tokensEarned);
+      IMarketing(marketingAddress).lockEarnedTokens(tokensEarned);
+    }
+    data.depositStartBlock = block.number;
+  }
+
+  // return total amount of underlying asset (assetToken) sub marketing fee
+  function _getNetAssetAmount() public view returns (uint256 amount, uint256 fee) {
     uint256 assetAmount = (IERC20(currentPoolToken).balanceOf(address(this))
       .mul(IInvestor(currentInvestor).getExchangeRate(assetToken))).div(1e18);
     // Fix muldiv inaccuraties
-    return assetAmount >= investedAsset ? assetAmount : investedAsset;
+    if (assetAmount < investedAsset) assetAmount = investedAsset;
+    // subtract marketing fee
+    uint256 marketingFee = (assetAmount.sub(investedAsset).mul(marketingRate)).div(1e18);
+    return (assetAmount.sub(marketingFee), marketingFee);
+  }
+
+  function _getAssetAmount() public view onlyOwner returns (uint256) {
+    return (IERC20(currentPoolToken).balanceOf(address(this))
+      .mul(IInvestor(currentInvestor).getExchangeRate(assetToken))).div(1e18);
+  }
+
+  // return total requestable marketing fee
+  function _getCurrentMarketingFee() public view returns (uint256) {
+    (,uint256 fee) = _getNetAssetAmount();
+    return IERC20(assetToken).balanceOf(address(this)).add(fee);
   }
 
   function _invest(uint256 assetAmount) private returns (uint256) {

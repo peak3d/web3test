@@ -212,7 +212,7 @@ class Asset extends Component {
           >
           <Typography className={ classes.buttonText } variant={ 'h5'} color={asset.disabled?'':'secondary'}>{asset.disabled? t('Asset.Disabled'):t('Asset.Earn')}</Typography>
         </Button>
-        <div style={{textAlign: 'center'}}>Depositing new tokens will reset your rewards! Claim them first before depositing</div>
+        {/*<div style={{textAlign: 'center'}}>Depositing new tokens will reset your rewards! Claim them first before depositing</div>*/}
       </div>
       <div className={ classes.sepperator }>
         <IconButton onClick={ this.onReload } disabled={ loading || !connected || asset.disabled}>
