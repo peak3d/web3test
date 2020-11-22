@@ -441,8 +441,9 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
     return _totalSupply > 0 ? (netAssetAmount.mul(1e18)).div(_totalSupply) : 0;
   }
 
-  function getUserData() public view returns (uint256 assetIn, uint256 blockStart) {
-    return (userData[msg.sender].investedAsset, userData[msg.sender].depositStartBlock);
+  function getUserData() public view returns (uint256 assetIn, uint256 blockStart, uint256 tokensEarned) {
+    UserData storage data = userData[msg.sender];
+    return (data.investedAsset, data.depositStartBlock, data.tokensEarned);
   }
 
   function getApr() public view returns(uint256) {

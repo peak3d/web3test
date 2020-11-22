@@ -57,14 +57,14 @@ const styles = theme => ({
     alignItems: 'center'
   },
   sepperator: {
-    borderBottom: '1px solid #E1E1E1',
-    margin: '24px',
+    borderBottom: 'none',
+    margin: '0px',
     display: 'flex',
     alignItems: 'center',
-    [theme.breakpoints.up('sm')]: {
+    justifyContent: 'center',
+    [theme.breakpoints.up('md')]: {
       width: '40px',
-      borderBottom: 'none',
-      margin: '0px'
+
     }
   },
   scaleContainer: {
@@ -75,7 +75,10 @@ const styles = theme => ({
     flexWrap: 'wrap',
   },
   scale: {
-    minWidth: '10px'
+    minWidth: '10px',
+    [theme.breakpoints.down('sm')]: {
+      padding: '10px 16px'
+    }
   },
   buttonText: {
     fontWeight: '700',

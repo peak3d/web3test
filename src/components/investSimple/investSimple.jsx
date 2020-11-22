@@ -497,7 +497,7 @@ class InvestSimple extends Component {
     const width = window.innerWidth
     return assets.map((asset) => {
       return (
-        <Accordion className={ classes.expansionPanel } square key={ asset.id+"_expand" } expanded={ expanded === asset.id} onChange={ () => { this.handleChange(asset.id) } }>
+        <Accordion className={ classes.expansionPanel } square key={ asset.id+"_expand" } expanded={ expanded === asset.id} onChange={ () => { this.handleChange(asset.id, asset.disabled) } }>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="panel1bh-content"
@@ -555,10 +555,10 @@ class InvestSimple extends Component {
     })
   }
 
-  handleChange = (id) => {
+  handleChange = (id, disabled) => {
     const expandedId = this.state.expanded === id ? null : id
     this.setState({ expanded: expandedId })
-    if (expandedId)
+    if (expandedId && !disabled)
       dispatcher.dispatch({ type: POOL_BALANCES, content: {id: expandedId, items:[FILTER_STAKE, FILTER_POOL] } } )
   }
 
