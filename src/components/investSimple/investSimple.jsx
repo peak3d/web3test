@@ -42,36 +42,24 @@ const styles = (theme) => ({
     width: "100%",
     justifyContent: "flex-start",
     alignItems: "center",
-    [theme.breakpoints.up("md")]: {
-      minWidth: "1000px",
-    },
-    [theme.breakpoints.up("lg")]: {
-      minWidth: "1000px",
-    },
   },
   investedContainerLoggedOut: {
     display: "flex",
-    flex: 1,
+    flex: "1 100%",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    minWidth: "100%",
     marginTop: "40px",
-    [theme.breakpoints.up("md")]: {
-      minWidth: "1000px",
-    },
+    width: "100%",
   },
   investedContainer: {
     display: "flex",
     flex: 1,
     flexDirection: "column",
-    minWidth: "100%",
-    [theme.breakpoints.up("md")]: {
-      minWidth: "1000px",
-    },
+    width: "100%",
   },
   titleInvested: {
-    margin: "15px 0 15px",
+    margin: "15px 10px 15px",
   },
   investedVaults: {
     display: "flex",
@@ -84,6 +72,7 @@ const styles = (theme) => ({
     display: "grid",
     gridTemplateColumns: "1fr",
     gridColumnGap: "0",
+    width: "100%",
     [theme.breakpoints.up("lg")]: {
       gridTemplateColumns: "repeat(2, 1fr)",
       gridColumnGap: "24px",
@@ -445,7 +434,7 @@ class InvestSimple extends Component {
 
     return (
       <div className={classes.root}>
-        <div className={classes.twoColumns}>
+        {/*<div className={classes.twoColumns}>*/}
           <div className={classes.iconInvested}>
             <img
               alt="Optimized Yield Farming"
@@ -466,7 +455,7 @@ class InvestSimple extends Component {
               {connected && value === 1 && this.renderAssetBlocksv2()}
             </div>
           </div>
-        </div>
+          {/*</div>*/}
 
         {loading && <Loader />}
         {this.renderSnackbar()}

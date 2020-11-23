@@ -526,7 +526,7 @@ class Store {
       return callback(null, 0)
 
     try {
-      const balance = await (this.chainId == 1 ? asset.contract.getGeneratedYelds() : asset.contract.getTokensEarned());
+      const balance = await (this.chainId === 1 ? asset.contract.getGeneratedYelds() : asset.contract.getTokensEarned());
       callback(null, this.fromWei(balance))
     } catch(ex) {
       console.log(ex)

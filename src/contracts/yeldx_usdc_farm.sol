@@ -285,7 +285,8 @@ contract yUSDC is ERC20, ERC20Detailed, Ownable {
   address public currentInvestor;
   address currentPoolToken;
   //address public assetToken = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; //mainnet
-  address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b; //rinkeby
+  address public assetToken = 0xb7a4F3E9097C08dA09517b5aB877F7a917224ede; //Kovan
+  //address public assetToken = 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b; //rinkeby
   //address public assetToken = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C; //ropsten
 
   // marketing
