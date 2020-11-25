@@ -16,6 +16,7 @@ interface Fulcrum {
   function burn(address receiver, uint256 burnAmount) external returns (uint256 loanAmountPaid);
   function assetBalanceOf(address _owner) external view returns (uint256 balance);
   function supplyInterestRate() external view returns (uint256 rate);
+
 }
 
 library SafeMath {
@@ -48,6 +49,10 @@ contract FulcrumLender {
   address constant idai = address(0);
   address constant usdt = address(0);
   address constant iusdt = address(0);
+
+  function approve(address token) public {
+    IERC20(token).approve(_token2iToken(token), uint(-1));
+  }
 
   function invest(address token, uint256 assetAmount) public returns(uint256) {
     address iToken = _token2iToken(token);

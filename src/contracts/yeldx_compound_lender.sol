@@ -60,6 +60,10 @@ contract CompoundLender {
   address constant cusdt = 0x135669c2dcBd63F639582b313883F101a4497F76;
   */
 
+  function approve(address token) public {
+    IERC20(token).approve(_token2cToken(token), uint(-1));
+  }
+
   function invest(address token, uint256 assetAmount) public returns(uint256) {
     address cToken = _token2cToken(token);
     require(cToken != address(0));

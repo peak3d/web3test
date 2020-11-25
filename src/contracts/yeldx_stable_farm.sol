@@ -259,6 +259,7 @@ library SafeERC20 {
 }
 
 interface IStrategy {
+  function approve(address token) external;
   function invest(address token, uint256 assetAmount) external returns(uint256);
   function redeem(address token, uint256 poolAmount) external returns (uint256);
   function getAssetAmount(address token, address _owner) external view returns (uint256);
@@ -392,14 +393,21 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
     // Check if we simply replace / update
     for (uint i=0;i<strategies.length; i++){
       if (newPoolToken == IStrategy(strategies[i]).getPoolToken(assetToken)){
+        if (currentStrategy == strategies[i])
+          currentStrategy = strategy;
         strategies[i] = strategy;
         return;
       }
     }
 
     strategies.push(strategy);
-    // Approve: allow strategy ctoken to withdraw assetTokens owned by this
-    IERC20(assetToken).safeApprove(newPoolToken, uint(-1));
+
+    // Approve: allow strategy to withdraw assetTokens owned by this
+    (bool success, bytes memory result) = strategy.delegatecall(
+      abi.encodeWithSelector(IStrategy(strategy).approve.selector, assetToken));
+    require(success, "Approve failed");
+    result;
+
     if (strategies.length == 1){
       currentStrategy = strategy;
       currentPoolToken = newPoolToken;
@@ -467,7 +475,7 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
 
   function _getTokensEarned(address _user) public view returns (uint256) {
     UserData storage data = userData[_user];
-    return data.depositStartBlock > 0
+    return data.depositStartBlock > 0 && _totalSupply > 0
       ? data.tokensEarned.add(IController(controllerAddress)
           .calculateTokensEarned(data.investedAsset.mul(to18),
           (balanceOf(msg.sender).mul(1e18)).div(_totalSupply),

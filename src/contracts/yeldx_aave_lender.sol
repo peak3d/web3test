@@ -12,7 +12,8 @@ interface IERC20 {
 }
 
 interface AaveLPAddressProvider {
-  function getLendingPool() external returns (address);
+  function getLendingPool() external view returns (address);
+  function getLendingPoolCore() external view returns (address);
 }
 
 interface AaveLP {
@@ -35,14 +36,7 @@ interface AaveLP {
 }
 
 interface AaveToken {
-  function redeem(uint256 _amount)
-}
-
-interface Aave {
-  function mint(address receiver, uint256 amount) external payable returns (uint256 mintAmount);
-  function burn(address receiver, uint256 burnAmount) external returns (uint256 loanAmountPaid);
-  function assetBalanceOf(address _owner) external view returns (uint256 balance);
-  function supplyInterestRate() external view returns (uint256 rate);
+  function redeem(uint256 _amount) external;
 }
 
 library SafeMath {
@@ -51,24 +45,33 @@ library SafeMath {
     uint256 c = a - b;
     return c;
   }
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b > 0, "SafeMath: div failed");
+    uint256 c = a / b;
+    return c;
+  }
 }
 
 contract AaveLender {
   using SafeMath for uint256;
-  //mainnnet
+  /*//mainnnet
   address constant lendingPoolAddressProvider = 0x24a42fD28C976A61Df5D00D0599C34c4f90748c8;
   address constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
   address constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-  /*// Kovan
+  */
+  // Kovan
   address constant lendingPoolAddressProvider = 0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5;
   address constant usdc = 0xe22da380ee6B445bb8273C81944ADEB6E8450422;
   address constant dai = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
   address constant usdt = 0x13512979ADE267AB5100878E2e0f485B568328a4;
-  */
+
+  function approve(address token) public {
+    IERC20(token).approve(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPoolCore(), uint(-1));
+  }
 
   function invest(address token, uint256 assetAmount) public returns(uint256) {
-    address lendingPool = AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool(token);
+    address lendingPool = AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool();
     require(lendingPool != address(0));
     // aave pegs token 1:1
     AaveLP(lendingPool).deposit(token, assetAmount, 0);
@@ -89,12 +92,12 @@ contract AaveLender {
   }
 
   function getApr(address token) public view returns (uint256) {
-    (,,,,liquidityRate,,,,,,,,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool(token)).getReserveData();
+    (,,,,uint256 liquidityRate,,,,,,,,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool()).getReserveData(token);
     return liquidityRate.div(1e9);
   }
 
-  function getPoolToken(address token) public pure returns (address) {
-    (,,,,,,,,,,,token,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool(token)).getReserveData();
-    return token;
+  function getPoolToken(address token) public view returns (address) {
+    (,,,,,,,,,,,address aToken,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool()).getReserveData(token);
+    return aToken;
   }
 }

@@ -328,7 +328,7 @@ class Asset extends Component {
     var { redeemAmount } = this.state
     const { asset, startLoading  } = this.props
 
-    if (redeemAmount > asset.investedBalance && redeemAmount - asset.investedBalance < 1E-4)
+    if (redeemAmount > asset.investedBalance && redeemAmount - asset.investedBalance < 1E-3)
       redeemAmount = asset.investedBalance;
 
     if(!redeemAmount || isNaN(redeemAmount) || redeemAmount <= 0 || redeemAmount > asset.investedBalance) {
