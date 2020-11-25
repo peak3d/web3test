@@ -17,8 +17,6 @@ import {
   FILTER_SUPPLY,
   FILTER_BALANCE,
   FILTER_STAKE,
-  FILTER_POOL,
-  FILTER_APR,
 } from './constants'
 
 import config from '../config/config'
@@ -56,13 +54,14 @@ class Store {
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
-      price: 0,
+      currentBalance: 0,
       decimals: 18,
       version: 2,
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
-      yeldEarned: 0,
+      tokenEarned: 0,
+      tvl: 0,
     },
     {
       id: 'USDCv2',
@@ -75,14 +74,15 @@ class Store {
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
-      price: 0,
+      currentBalance: 0,
       decimals: 6,
       poolValue: 0,
       version: 2,
       disabled: false,
       invest: 'deposit(uint256)',
       redeem: 'withdraw(uint256)',
-      yeldEarned: 0,
+      tokenEarned: 0,
+      tvl: 0,
     },
     {
       id: 'USDTv2',
@@ -95,14 +95,15 @@ class Store {
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
-      price: 0,
+      currentBalance: 0,
       decimals: 6,
       poolValue: 0,
       version: 2,
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
-      yeldEarned: 0,
+      tokenEarned: 0,
+      tvl: 0,
     },
     {
       id: 'TUSDv2',
@@ -115,14 +116,15 @@ class Store {
       maxApr: 0,
       balance: 0,
       investedBalance: 0,
-      price: 0,
+      currentBalance: 0,
       decimals: 18,
       poolValue: 0,
       version: 2,
       disabled: false,
       invest: 'deposit',
       redeem: 'withdraw',
-      yeldEarned: 0,
+      tokenEarned: 0,
+      tvl: 0,
     },
     ]
 
@@ -209,7 +211,7 @@ class Store {
 
       this.assets.map((asset) => {
         if (chainAddresses[asset.id].yeld[this.addressIndex] !== '') {
-          asset.contract = new ethers.Contract(chainAddresses[asset.id].yeld[this.addressIndex], yeldConfig.yDAIAbi[this.chainId], signer)
+          asset.contract = new ethers.Contract(chainAddresses[asset.id].yeld[this.addressIndex], yeldConfig.stableFarmAbi, signer)
           asset.tokenContract = new ethers.Contract(chainAddresses[asset.id].token, config.erc20ABI, signer)
           asset.disabled = false
         } else {
@@ -282,18 +284,20 @@ class Store {
       if (filter.id === undefined || filter.id === asset.id){
         async.parallel([
           (callbackInner) => { this._getERC20Balance(asset, filter.items, callbackInner) },
-          (callbackInner) => { this._getInvestedBalance(asset, filter.items, callbackInner) },
-          (callbackInner) => { this._getPoolPrice(asset, filter.items, callbackInner) },
-          (callbackInner) => { this._getMaxAPR(asset, filter.items, callbackInner) },
-          (callbackInner) => { this._getYeldEarned(asset, callbackInner) },
+          (callbackInner) => { this._getUIPoolData(asset, filter.items, callbackInner) },
         ], (err, data) => {
-          asset.balance = data[0]
-          asset.investedBalance = data[1]
-          asset.price = data[2]
-          asset.maxApr = data[3]
-          asset.yeldEarned = data[4]
-
-          callback(null, asset)
+          if (err) {
+            console.log(err)
+            callback(err)
+          } else {
+            asset.balance = data[0]
+            asset.investedBalance = data[1].investedBalance
+            asset.currentBalance = data[1].currentBalance
+            asset.maxApr = data[1].maxApr
+            asset.tokenEarned = data[1].tokenEarned
+            asset.tvl = data[1].tvl
+            callback(null, asset)
+          }
         })
       } else
         callback(null, asset)
@@ -455,7 +459,7 @@ class Store {
   }
 
   _getERC20Balance = async (asset, filter, callback) => {
-    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_BALANCE)))
+    if (!asset.contract)
       return callback(null, asset.balance)
 
     try {
@@ -467,67 +471,20 @@ class Store {
     }
   }
 
-  _getInvestedBalance = async (asset, filter, callback) =>{
-    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_STAKE)))
-      return callback(null, asset.investedBalance)
-
-    try {
-      const balance = await asset.contract.balanceOf(this.address);
-      callback(null, this.fromWei(balance, asset.decimals))
-    } catch(ex) {
-      console.log(ex)
-      return callback(ex)
-    }
-  }
-
-  _getPoolPrice = async (asset, filter, callback) => {
-    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_POOL)))
-      return callback(null, asset.price)
-
-    try {
-      const balance = await asset.contract.getPricePerFullShare();
-      callback(null, this.fromWei(balance))
-    } catch(ex) {
-      console.log(ex)
-      return callback(ex)
-    }
-  }
-
-  _getMaxAPR = async (asset, filter, callback) => {
-    if (!asset.contract || (filter !== undefined && !filter.includes(FILTER_APR)))
-      return callback(null, asset.maxApr)
-
-    if (this.chainId === 1) {
-
-      let aprContract = new ethers.Contract(config.aggregatedContractAddress, config.aggregatedContractABI, this.ethersProvider)
-
-      const aprs = await aprContract.getAPROptions(asset.tokenContract.address);
-
-      const keys = Object.keys(aprs)
-      const workKeys = keys.filter((key) => {
-        return isNaN(key)
-      })
-      const maxApr = Math.max.apply(Math, workKeys.map(function(o) {
-        if(o === 'uniapr' || o === 'unicapr' || o === "iapr") {
-          return aprs[o]-100000000000000000000
-        }
-        return aprs[o];
-      }))
-
-      callback(null, this.fromWei(maxApr.toFixed(0)))
-    } else {
-      const maxApr = await asset.contract.getApr();
-      callback(null, this.fromWei(maxApr));
-    }
-  }
-
-  _getYeldEarned = async (asset, callback) =>{
+  _getUIPoolData = async (asset, filter, callback) =>{
     if (!asset.contract)
-      return callback(null, 0)
+      return callback(null, asset)
 
     try {
-      const balance = await (this.chainId === 1 ? asset.contract.getGeneratedYelds() : asset.contract.getTokensEarned());
-      callback(null, this.fromWei(balance))
+      const data = await asset.contract.getUIData(this.address);
+      const result = {
+        investedBalance: this.fromWei(data.yAmount, asset.decimals),
+        currentBalance: this.fromWei(data.assetAmount, asset.decimals),
+        maxApr: this.fromWei(data.apr),
+        tokenEarned: this.fromWei(data.tokensEarned),
+        tvl: this.fromWei(data.tvl, asset.decimals)
+        }
+      callback(null, result)
     } catch(ex) {
       console.log(ex)
       return callback(ex)

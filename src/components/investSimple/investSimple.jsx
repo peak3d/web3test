@@ -23,8 +23,6 @@ import {
   POOL_REDEEM,
   FILTER_BALANCE,
   FILTER_STAKE,
-  FILTER_POOL,
-  FILTER_APR,
   CONNECTION_CHANGED,
 } from '../../stores/constants'
 
@@ -370,7 +368,7 @@ class InvestSimple extends Component {
   connectionChanged = (provider) => {
     if (provider){
       const { t } = this.props
-      dispatcher.dispatch({ type: POOL_BALANCES, content: {items:[FILTER_BALANCE, FILTER_APR] } } )
+      dispatcher.dispatch({ type: POOL_BALANCES, content: {} } )
       const snackbarObj = { snackbarMessage: t("Unlock.WalletConnected"), snackbarType: 'Info', expanded: null}
       this.setState(snackbarObj)
     }
@@ -548,7 +546,7 @@ class InvestSimple extends Component {
     const expandedId = this.state.expanded === id ? null : id
     this.setState({ expanded: expandedId })
     if (expandedId && !disabled)
-      dispatcher.dispatch({ type: POOL_BALANCES, content: {id: expandedId, items:[FILTER_STAKE, FILTER_POOL] } } )
+      dispatcher.dispatch({ type: POOL_BALANCES, content: {id: expandedId} } )
   }
 
   startLoading = () => {

@@ -1,4 +1,4 @@
-pragma solidity 0.6.0;
+pragma solidity 0.6.5;
 
 interface IERC20 {
   function totalSupply() external view returns (uint256);
@@ -77,20 +77,20 @@ contract CompoundLender {
     require(Compound(cToken).redeem(poolAmount) == 0, "COMPOUND: redeem failed");
     return IERC20(token).balanceOf(address(this)).sub(assetTokens);
   }
-
+  
   // return the ratio asset / poolToken in 1E-18 decimals
   function getExchangeRate(address token) public view returns (uint256) {
     return Compound(_token2cToken(token)).exchangeRateStored();
   }
-
+  
   function getApr(address token) public view returns (uint256) {
     return Compound(_token2cToken(token)).supplyRatePerBlock() * 2102400;
   }
-
+  
   function getPoolToken(address token) public pure returns (address) {
     return _token2cToken(token);
   }
-
+  
   function _token2cToken(address asset) internal pure returns (address){
     if (asset == usdc)
       return cusdc;

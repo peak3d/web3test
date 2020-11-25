@@ -1,4 +1,4 @@
-pragma solidity 0.6.0;
+pragma solidity 0.6.5;
 
 library SafeMath {
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -91,13 +91,13 @@ contract Ownable is Context {
     }
 }
 
-contract Marketing is Ownable{
+contract Controller is Ownable{
   using SafeMath for uint256;
-
+  
   uint256 constant oneDayInBlocksMillion = 6500e6;
   uint256 constant yeldToRewardPerDayPerMillion = 100;
   uint256 public lockedToken = 0;
-
+  
   struct Farm {
     bool registered;
     uint256 lockedToken;
@@ -108,19 +108,19 @@ contract Marketing is Ownable{
   function onDeposit(uint256 amount) external {}
   // TODO: resolve withdraw actions
   function onWithdraw(uint256 amount) external {}
-
-  function calculateTokensEarned(uint256 amount, uint256 share, uint256 depositStartBlock) external view returns (uint256) {
+  
+  function calculateTokensEarned(uint256 amount, uint256 /*share*/, uint256 depositStartBlock) external view returns (uint256) {
     require(farms[msg.sender].registered, "Farm not registered");
     uint blocksPassed = block.number.sub(depositStartBlock);
-    return amount.mul(yeldToRewardPerDayPerMillion).mul(blocksPassed).div(oneDayInBlocksMillion);
+    return amount.mul(yeldToRewardPerDayPerMillion).mul(blocksPassed).div(oneDayInBlocksMillion); 
   }
-
+  
   function lockEarnedTokens(uint256 tokenCount) external {
     Farm storage farm = farms[msg.sender];
     require(farm.registered, "Farm not registered");
     farm.lockedToken = farm.lockedToken.add(tokenCount);
   }
-
+  
   function registerFarm(address farm) external onlyOwner {
     farms[farm].registered = true;
   }

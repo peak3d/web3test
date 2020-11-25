@@ -224,7 +224,7 @@ class Asset extends Component {
       </div>
       <div className={classes.tradeContainer}>
         {!asset.disabled && <div className={ classes.balances }>
-          <Typography variant='h3' className={ classes.title }></Typography><Typography variant='h4' onClick={ () => { this.setRedeemAmount(100) } }  className={ classes.value } noWrap>{ asset.investedBalance ? asset.investedBalance.toFixed(4) : '0.0000' } { asset.investSymbol } ({ asset.investedBalance ? (parseFloat(asset.investedBalance)*parseFloat(asset.price)).toFixed(4) : '0' } { asset.tokenSymbol ? asset.tokenSymbol : asset.symbol } )</Typography>
+          <Typography variant='h3' className={ classes.title }></Typography><Typography variant='h4' onClick={ () => { this.setRedeemAmount(100) } }  className={ classes.value } noWrap>{ asset.investedBalance ? asset.investedBalance.toFixed(4) : '0.0000' } { asset.investSymbol } ({ asset.currentBalance ? asset.currentBalance.toFixed(4) : '0' } { asset.tokenSymbol ? asset.tokenSymbol : asset.symbol } )</Typography>
         </div>}
         <TextField
           fullWidth
@@ -284,7 +284,7 @@ class Asset extends Component {
           >
           <Typography className={ classes.buttonText } variant={ 'h5'} color={asset.disabled?'':'secondary'}>{ asset.disabled? t('Asset.Disabled'):t('Asset.Claim') }</Typography>
         </Button>
-        {asset.yeldEarned.toFixed(4)} YELD earned
+        {asset.tokenEarned.toFixed(4)} YELD earned
       </div>
     </div>)
   };
@@ -358,9 +358,6 @@ class Asset extends Component {
     const balance = asset.balance
     let amount = balance*percent/100
 
-    if(percent === 100 && asset.symbol === 'ETH') {
-        amount = amount - 0.009
-    }
     this.setState({ amount: amount.toFixed(4) })
   }
 

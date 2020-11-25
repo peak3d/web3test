@@ -81,8 +81,8 @@ export default {
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0x5E40274eD38f950A0DE6aB55D168776C5506f0bC'],
-        token: '0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',
+        yeld: ['', '0xBdd916C8b0515B4Ac0435a8eD933C22CCA2B78AB'],
+        token: '0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e',
       },
       retirementYeldAddresses: ['0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5','0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5'],
 
@@ -338,61 +338,59 @@ export default {
       "type": "function"
     }
   ],
-  yDAIAbi: {
-  1:[
+  stableFarmAbi:
+  [
     {
-      "constant": true,
-      "inputs": [],
-      "name": "balance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
+      "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
           "internalType": "address",
-          "name": "account",
+          "name": "token",
           "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
+        },
         {
+          "indexed": false,
           "internalType": "uint256",
-          "name": "",
+          "name": "amountIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountOut",
           "type": "uint256"
         }
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      "name": "Invest",
+      "type": "event"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
+      "anonymous": false,
+      "inputs": [
         {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
+          "indexed": false,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountOut",
+          "type": "uint256"
         }
       ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      "name": "Redeem",
+      "type": "event"
     },
     {
-      "constant": false,
       "inputs": [
         {
           "internalType": "uint256",
@@ -402,160 +400,42 @@ export default {
       ],
       "name": "deposit",
       "outputs": [],
-      "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "getGeneratedYelds",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getPricePerFullShare",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_shares",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdraw",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-  ],
-  3:[
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "balance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
       "inputs": [
         {
           "internalType": "address",
-          "name": "account",
+          "name": "_user",
           "type": "address"
         }
       ],
-      "name": "balanceOf",
+      "name": "getUIData",
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "yAmount",
           "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
+        },
         {
           "internalType": "uint256",
-          "name": "_amount",
+          "name": "assetAmount",
           "type": "uint256"
-        }
-      ],
-      "name": "deposit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getTokensEarned",
-      "outputs": [
+        },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "tokensEarned",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "apr",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tvl",
           "type": "uint256"
         }
       ],
@@ -563,65 +443,6 @@ export default {
       "type": "function"
     },
     {
-      "constant": true,
-      "inputs": [],
-      "name": "getPricePerFullShare",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getApr",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
       "inputs": [
         {
           "internalType": "uint256",
@@ -631,320 +452,10 @@ export default {
       ],
       "name": "withdraw",
       "outputs": [],
-      "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
     },
   ],
-  4:[
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "balance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "deposit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getTokensEarned",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getPricePerFullShare",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getApr",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_shares",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdraw",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-  ],
-  42:[
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "balance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "deposit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getTokensEarned",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getPricePerFullShare",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getApr",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_shares",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdraw",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-  ],
-  },
   retirementYeldAbi: [
     {
       "inputs": [
