@@ -50,11 +50,11 @@ contract FulcrumLender {
   address constant usdt = address(0);
   address constant iusdt = address(0);
 
-  function approve(address token) public {
+  function approve(address token) external {
     IERC20(token).approve(_token2iToken(token), uint(-1));
   }
 
-  function invest(address token, uint256 assetAmount) public returns(uint256) {
+  function invest(address token, uint256 assetAmount) external returns(uint256) {
     address iToken = _token2iToken(token);
     require(iToken != address(0));
     // mint iToken
@@ -63,7 +63,7 @@ contract FulcrumLender {
     return poolTokens;
   }
 
-  function redeem(address token, uint256 poolAmount) public returns (uint256) {
+  function redeem(address token, uint256 poolAmount) external returns (uint256) {
     address iToken = _token2iToken(token);
     require(iToken != address(0));
     // redeem tokens to this contract
@@ -73,16 +73,19 @@ contract FulcrumLender {
   }
 
   // return the amount of the underlying asset
-  function getAssetAmount(address token, address _owner) public view returns (uint256) {
+  function getAssetAmount(address token, address _owner) external view returns (uint256) {
     return Fulcrum(_token2iToken(token)).assetBalanceOf(_owner);
   }
 
-  function getApr(address token) public view returns (uint256) {
+  function getApr(address token) external view returns (uint256) {
     return Fulcrum(_token2iToken(token)).supplyInterestRate().div(100);
   }
 
-  function getPoolToken(address token) public pure returns (address) {
+  function getPoolToken(address token) external pure returns (address) {
     return _token2iToken(token);
+  }
+
+  function refresh(address token) external {
   }
 
   function _token2iToken(address asset) internal pure returns (address){

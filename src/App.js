@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {Mutex} from 'async-mutex';
 import './App.css';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -51,6 +52,8 @@ class App extends Component {
     this.ethersProvider = null
     this.eventProvider = null
     this.web3Provider = null
+
+    this.mutex = new Mutex();
   }
 
   componentDidMount = async () => {
@@ -74,11 +77,13 @@ class App extends Component {
     })
 
     provider.on("accountsChanged", async (accounts: string[]) => {
+      const release = await this.mutex.acquire();
       if (accounts[0] !== this.state.address)
       {
         store.setProvider(this.ethersProvider, this.eventProvider, this.state.chainId, accounts[0])
         await this.setState({ address: accounts[0] });
       }
+      release()
     })
 
     provider.on("chainChanged", async (chainId: number) => {

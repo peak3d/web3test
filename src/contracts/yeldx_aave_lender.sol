@@ -66,11 +66,11 @@ contract AaveLender {
   address constant dai = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
   address constant usdt = 0x13512979ADE267AB5100878E2e0f485B568328a4;
 
-  function approve(address token) public {
+  function approve(address token) external {
     IERC20(token).approve(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPoolCore(), uint(-1));
   }
 
-  function invest(address token, uint256 assetAmount) public returns(uint256) {
+  function invest(address token, uint256 assetAmount) external returns(uint256) {
     address lendingPool = AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool();
     require(lendingPool != address(0));
     // aave pegs token 1:1
@@ -78,8 +78,8 @@ contract AaveLender {
     return assetAmount;
   }
 
-  function redeem(address token, uint256 poolAmount) public returns (uint256) {
-    address aToken = getPoolToken(token);
+  function redeem(address token, uint256 poolAmount) external returns (uint256) {
+    address aToken = _getPoolToken(token);
     require(aToken != address(0));
     // redeem tokens to this contract
     AaveToken(aToken).redeem(poolAmount);
@@ -87,16 +87,23 @@ contract AaveLender {
   }
 
   // return the amount of the underlying asset
-  function getAssetAmount(address token, address _owner) public view returns (uint256) {
-    return IERC20(getPoolToken(token)).balanceOf(_owner);
+  function getAssetAmount(address token, address _owner) external view returns (uint256) {
+    return IERC20(_getPoolToken(token)).balanceOf(_owner);
   }
 
-  function getApr(address token) public view returns (uint256) {
+  function getApr(address token) external view returns (uint256) {
     (,,,,uint256 liquidityRate,,,,,,,,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool()).getReserveData(token);
     return liquidityRate.div(1e9);
   }
 
-  function getPoolToken(address token) public view returns (address) {
+  function getPoolToken(address token) external view returns (address) {
+    return _getPoolToken(token);
+  }
+
+  function refresh(address token) external {
+  }
+
+  function _getPoolToken(address token) private view returns (address){
     (,,,,,,,,,,,address aToken,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool()).getReserveData(token);
     return aToken;
   }

@@ -91,37 +91,86 @@ contract Ownable is Context {
     }
 }
 
+interface IFarm {
+  function name() external view returns (string memory);
+  function requestMarketingFee() external;
+  function rebalance() external;
+}
+
 contract Controller is Ownable{
   using SafeMath for uint256;
-  
+
   uint256 constant oneDayInBlocksMillion = 6500e6;
   uint256 constant yeldToRewardPerDayPerMillion = 100;
   uint256 public lockedToken = 0;
-  
+
   struct Farm {
-    bool registered;
+    address farm;
     uint256 lockedToken;
   }
-  mapping(address => Farm) farms;
+  Farm [] farms;
 
   // TODO: handle preconditions (%tokens restriction)
   function onDeposit(uint256 amount) external {}
   // TODO: resolve withdraw actions
   function onWithdraw(uint256 amount) external {}
-  
+
   function calculateTokensEarned(uint256 amount, uint256 /*share*/, uint256 depositStartBlock) external view returns (uint256) {
-    require(farms[msg.sender].registered, "Farm not registered");
+    require(_findFarm(msg.sender) < farms.length, "Farm not registered");
     uint blocksPassed = block.number.sub(depositStartBlock);
-    return amount.mul(yeldToRewardPerDayPerMillion).mul(blocksPassed).div(oneDayInBlocksMillion); 
+    return amount.mul(yeldToRewardPerDayPerMillion).mul(blocksPassed).div(oneDayInBlocksMillion);
   }
-  
+
   function lockEarnedTokens(uint256 tokenCount) external {
-    Farm storage farm = farms[msg.sender];
-    require(farm.registered, "Farm not registered");
+    uint farmId = _findFarm(msg.sender);
+    require(farmId < farms.length, "Farm not registered");
+    Farm storage farm = farms[farmId];
     farm.lockedToken = farm.lockedToken.add(tokenCount);
   }
-  
+
   function registerFarm(address farm) external onlyOwner {
-    farms[farm].registered = true;
+    bytes32 farmName = keccak256(abi.encodePacked(IFarm(farm).name()));
+    for (uint i = 0; i < farms.length; i++) {
+      if (farms[i].farm == farm)
+        return;
+      if (keccak256(abi.encodePacked(IFarm(farms[i].farm).name())) == farmName)
+      {
+        lockedToken -= farms[i].lockedToken;
+        farms[i].farm = farm;
+        return;
+      }
+    }
+    farms.push(Farm(farm, 0));
+  }
+
+  function unregisterFarm(address farm) external onlyOwner {
+    uint newLength = 0;
+    for (uint i=0; i < farms.length; i++){
+      if (farms[i].farm != farm){
+        if (newLength < i)
+          farms[newLength] = farms[i];
+        ++newLength;
+      } else
+        lockedToken -= farms[i].lockedToken;
+    }
+    if (newLength < farms.length)
+      farms.pop();
+  }
+
+  function collectFees() external onlyOwner {
+    for (uint i = 0; i < farms.length; i++)
+      IFarm(farms[i].farm).requestMarketingFee();
+  }
+
+  function rebalance() external onlyOwner {
+    for (uint i = 0; i < farms.length; i++)
+      IFarm(farms[i].farm).rebalance();
+  }
+
+  function _findFarm(address _farm) private view returns (uint){
+    for (uint i = 0; i < farms.length; i++)
+      if (farms[i].farm == _farm)
+        return i;
+    return farms.length;
   }
 }

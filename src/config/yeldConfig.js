@@ -59,7 +59,7 @@ export default {
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0xD4B73902AbB0662Eff6c097f38Ce111251379aa7'],
+        yeld: ['', '0x5d13B0b4191eD60560378D7C294fE16196116C78'],
         token: '0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b',
       },
       retirementYeldAddresses: ['0x675A9305785a94B22b4a0e9a98e7970231262eAd','0x675A9305785a94B22b4a0e9a98e7970231262eAd'],
