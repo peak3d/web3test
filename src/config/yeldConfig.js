@@ -3,88 +3,88 @@ export default {
     // mainnet
     1: {
       DAIv2: {
-        yeld: ['0xc0bc90a848CcCdE67f7615917CB2c00D77f08F22','0x50418A1a7A06b697e447bB2Ffdd2241547684691'],
+        yeld: '0x50418A1a7A06b697e447bB2Ffdd2241547684691',
         token: '0x6b175474e89094c44da98b954eedeac495271d0f',
       },
       TUSDv2: {
-        yeld: ['0x1C57481dc2e2B987b2f012e9d3CC4cbBEcd7c116','0xDC3315BABDdA07b620EEFC2006C629889Cb684B1'],
+        yeld: '0xDC3315BABDdA07b620EEFC2006C629889Cb684B1',
         token: '0x0000000000085d4780B73119b644AE5ecd22b376',
       },
       USDTv2: {
-        yeld: ['0x5B9Cd26559fDe5902d64E81F711eC3D13b9c69D0','0x1b1A4586FD99f7e044868ac8e5E91EAc4863149b'],
+        yeld: '0x1b1A4586FD99f7e044868ac8e5E91EAc4863149b',
         token: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
       },
       USDCv2: {
-        yeld: ['0x9FB54C5D0430d5f9bEb07a15d9b817105Ba26A21','0xae1887e035385d2f7d3Ff057c6EE053842f30Af6'],
+        yeld: '0xae1887e035385d2f7d3Ff057c6EE053842f30Af6',
         token: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
       },
-      retirementYeldAddresses: ['0xF572096BbB414C6cC0C8915e9BF9e77C89eff2bD','0xF572096BbB414C6cC0C8915e9BF9e77C89eff2bD'],
+      retirementYeldAddresses: '0xF572096BbB414C6cC0C8915e9BF9e77C89eff2bD',
 
       yeldAddress: '0x468ab3b1f63A1C14b361bC367c3cC92277588Da1',
     },
      // Ropsten
     3: {
       DAIv2: {
-        yeld:['','0x98c2a42dEF062A692D53A4D122a25881dBa9448e'],
+        yeld:'0x98c2a42dEF062A692D53A4D122a25881dBa9448e',
         token: '0x31F42841c2db5173425b5223809CF3A38FEde360',
       },
       TUSDv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDTv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0x24877cFd3E674fAA7B800d9df9647c5053164D53'],
+        yeld: '0x24877cFd3E674fAA7B800d9df9647c5053164D53',
         token: '0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C',
       },
-      retirementYeldAddresses: ['0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5','0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5'],
+      retirementYeldAddresses: '0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5',
 
       yeldAddress: '0x62B175D51aF4533085c71A3D00Fb96a113488B6e',
     },
     // rinkeby
     4: {
       DAIv2: {
-        yeld:['',''],
+        yeld:'',
         token: '',
       },
       TUSDv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDTv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0x5d13B0b4191eD60560378D7C294fE16196116C78'],
+        yeld: '0x5d13B0b4191eD60560378D7C294fE16196116C78',
         token: '0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b',
       },
-      retirementYeldAddresses: ['0x675A9305785a94B22b4a0e9a98e7970231262eAd','0x675A9305785a94B22b4a0e9a98e7970231262eAd'],
+      retirementYeldAddresses: '0x675A9305785a94B22b4a0e9a98e7970231262eAd',
 
       yeldAddress: '0xe17399850c9c12934901BC30c8e4ba8d9341Af7F',
     },
     // Kovan
     42: {
       DAIv2: {
-        yeld:['',''],
+        yeld: '',
         token: '',
       },
       TUSDv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDTv2: {
-        yeld: ['',''],
+        yeld: '',
         token: '',
       },
       USDCv2: {
-        yeld: ['', '0xB1d34042465BA0deA89DEFCdFb444377a6447441'],
+        yeld: '0xB1d34042465BA0deA89DEFCdFb444377a6447441',
         token: '0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',
       },
-      retirementYeldAddresses: ['0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5','0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5'],
+      retirementYeldAddresses: '0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5',
 
       yeldAddress: '0x62B175D51aF4533085c71A3D00Fb96a113488B6e',
     },

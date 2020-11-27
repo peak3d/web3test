@@ -259,12 +259,13 @@ library SafeERC20 {
 }
 
 interface IStrategy {
+  function getId() external pure returns (bytes32);
   function approve(address token) external;
   function invest(address token, uint256 assetAmount) external returns(uint256);
   function redeem(address token, uint256 poolAmount) external returns (uint256);
+  function balanceOf(address token, address _owner) external view returns (uint256);
   function getAssetAmount(address token, address _owner) external view returns (uint256);
   function getApr(address token) external view returns (uint256);
-  function getPoolToken(address token) external view returns (address);
   function refresh(address token) external;
 }
 
@@ -285,7 +286,6 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
 
   address[] strategies;
   address public currentStrategy;
-  address currentPoolToken;
   address immutable public assetToken;
 
   struct UserData {
@@ -315,7 +315,7 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
   function withdrawAll() external onlyOwner {
     // ASSETS
     if (currentStrategy != address(0)) {
-      _redeem(IERC20(currentPoolToken).balanceOf(address(this)));
+      _redeem(IStrategy(currentStrategy).balanceOf(assetToken, address(this)));
       // tranfer all of them back to holders (/*todo*/)
       IERC20(assetToken).transfer(msg.sender, IERC20(assetToken).balanceOf(address(this)));
     }
@@ -385,7 +385,7 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
     );
 
     // Transform into tokens
-    uint256 poolTokenAmount = IERC20(currentPoolToken).balanceOf(address(this));
+    uint256 poolTokenAmount = IStrategy(currentStrategy).balanceOf(assetToken, address(this));
     uint256 poolAmount = ((withdrawAsset.add(ourFee)).mul(poolTokenAmount))
       .div(IStrategy(currentStrategy).getAssetAmount(assetToken, address(this)));
     if (poolAmount > poolTokenAmount)
@@ -415,12 +415,10 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
   }
 
   function addStrategy(address strategy) external onlyOwner {
-    address newPoolToken = IStrategy(strategy).getPoolToken(assetToken);
-    require(newPoolToken != address(0), "Invalid strategy");
-
+    bytes32 newId = IStrategy(strategy).getId();
     // Check if we simply replace / update
     for (uint i=0;i<strategies.length; i++){
-      if (newPoolToken == IStrategy(strategies[i]).getPoolToken(assetToken)){
+      if (newId == IStrategy(strategies[i]).getId()){
         if (currentStrategy == strategies[i])
           currentStrategy = strategy;
         strategies[i] = strategy;
@@ -438,7 +436,6 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
 
     if (strategies.length == 1){
       currentStrategy = strategy;
-      currentPoolToken = newPoolToken;
       // invest all assets
       _invest(IERC20(assetToken).balanceOf(address(this)));
     }
@@ -459,10 +456,9 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
     strategies.pop();
 
     if (strategy == currentStrategy) {
-      _redeem(IERC20(currentPoolToken).balanceOf(address(this)));
+      _redeem(IStrategy(currentStrategy).balanceOf(assetToken, address(this)));
       if (strategies.length > 0) {
           currentStrategy = strategies[0];
-          currentPoolToken = IStrategy(currentStrategy).getPoolToken(assetToken);
           _invest(IERC20(assetToken).balanceOf(address(this)));
       } else {
           currentStrategy = address(0);
@@ -478,7 +474,7 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
       return;
 
     // Convert fee (assetToken) in poolTokens
-    uint256 poolTokenAmount = IERC20(currentPoolToken).balanceOf(address(this));
+    uint256 poolTokenAmount = IStrategy(currentStrategy).balanceOf(assetToken, address(this));
     uint256 poolAmount = (fee.mul(poolTokenAmount))
       .div(IStrategy(currentStrategy).getAssetAmount(assetToken, address(this)));
     if (poolAmount > poolTokenAmount)
@@ -498,9 +494,8 @@ contract yStableFarm is ERC20, ERC20Detailed, Ownable {
       }
     }
     if (maxAprStrategy != address(0) && maxAprStrategy != currentStrategy) {
-      uint256 redeemed = _redeem(IERC20(currentPoolToken).balanceOf(address(this)));
+      uint256 redeemed = _redeem(IStrategy(currentStrategy).balanceOf(assetToken, address(this)));
       currentStrategy = maxAprStrategy;
-      currentPoolToken = IStrategy(currentStrategy).getPoolToken(assetToken);
       _invest(redeemed);
     }
   }

@@ -66,6 +66,10 @@ contract AaveLender {
   address constant dai = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
   address constant usdt = 0x13512979ADE267AB5100878E2e0f485B568328a4;
 
+  function getId() external pure returns (bytes32) {
+    return keccak256(abi.encodePacked("AaveLender"));
+  }
+
   function approve(address token) external {
     IERC20(token).approve(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPoolCore(), uint(-1));
   }
@@ -86,6 +90,10 @@ contract AaveLender {
     return poolAmount;
   }
 
+  function balanceOf(address token, address _owner) external view returns (uint256) {
+    return IERC20(_getPoolToken(token)).balanceOf(_owner);
+  }
+
   // return the amount of the underlying asset
   function getAssetAmount(address token, address _owner) external view returns (uint256) {
     return IERC20(_getPoolToken(token)).balanceOf(_owner);
@@ -94,10 +102,6 @@ contract AaveLender {
   function getApr(address token) external view returns (uint256) {
     (,,,,uint256 liquidityRate,,,,,,,,) = AaveLP(AaveLPAddressProvider(lendingPoolAddressProvider).getLendingPool()).getReserveData(token);
     return liquidityRate.div(1e9);
-  }
-
-  function getPoolToken(address token) external view returns (address) {
-    return _getPoolToken(token);
   }
 
   function refresh(address token) external {

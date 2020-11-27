@@ -6,7 +6,6 @@ import {
   YELD_STAKE,
   YELD_UNSTAKE,
   YELD_REDEEM,
-  ADDRESS_INDEX_CHANGED,
   CONNECTION_CHANGED,
   POOL_BALANCES,
   POOL_INVEST,
@@ -33,7 +32,6 @@ const burnAddress = '0x0000000000000000000000000000000000000000'
 
 class Store {
   constructor() {
-    this.addressIndex = 1
     this.ethersProvider = null
     this.eventProvider = null
     this.address = null
@@ -166,14 +164,6 @@ class Store {
     return this.assets
   }
 
-  setYeldAddressIndex(index) {
-    if (this.addressIndex !== index) {
-      this.addressIndex = index
-      this.setupContracts()
-      emitter.emit(ADDRESS_INDEX_CHANGED, index)
-    }
-  }
-
   setProvider(provider, eventProvider, chainId, address) {
     if (this.eventProvider)
       this.eventProvider.removeAllListeners();
@@ -210,8 +200,8 @@ class Store {
       const signer = this.ethersProvider.getSigner()
 
       this.assets.map((asset) => {
-        if (chainAddresses[asset.id].yeld[this.addressIndex] !== '') {
-          asset.contract = new ethers.Contract(chainAddresses[asset.id].yeld[this.addressIndex], yeldConfig.stableFarmAbi, signer)
+        if (chainAddresses[asset.id].yeld !== '') {
+          asset.contract = new ethers.Contract(chainAddresses[asset.id].yeld, yeldConfig.stableFarmAbi, signer)
           asset.tokenContract = new ethers.Contract(chainAddresses[asset.id].token, config.erc20ABI, signer)
           asset.disabled = false
         } else {
@@ -220,7 +210,7 @@ class Store {
         return true
       })
 
-      this.retirementYeldContract = new ethers.Contract(chainAddresses.retirementYeldAddresses[this.addressIndex], yeldConfig.retirementYeldAbi, signer)
+      this.retirementYeldContract = new ethers.Contract(chainAddresses.retirementYeldAddresses, yeldConfig.retirementYeldAbi, signer)
       this.yeldContract = new ethers.Contract(chainAddresses.yeldAddress, yeldConfig.yeldAbi, signer)
     }
     return true
@@ -312,7 +302,7 @@ class Store {
 
   stakeYeld = async (amount) => {
     try {
-      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses[this.addressIndex]
+      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses
       const allowance = await this.yeldContract.allowance(this.address, retirementYeldAddress)
       const amountToStake = this.toWei(amount)
 
@@ -449,7 +439,7 @@ class Store {
       return callback(null, null)
 
     try {
-      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses[this.addressIndex]
+      const retirementYeldAddress = yeldConfig.addresses[this.chainId].retirementYeldAddresses
       const result = await this.ethersProvider.getBalance(retirementYeldAddress);
       callback(null, result)
     } catch(e) {

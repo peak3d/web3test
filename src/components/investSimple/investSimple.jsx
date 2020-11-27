@@ -40,6 +40,7 @@ const styles = (theme) => ({
     width: "100%",
     justifyContent: "flex-start",
     alignItems: "center",
+    marginTop: "20px",
   },
   investedContainerLoggedOut: {
     display: "flex",
@@ -545,8 +546,6 @@ class InvestSimple extends Component {
   handleChange = (id, disabled) => {
     const expandedId = this.state.expanded === id ? null : id
     this.setState({ expanded: expandedId })
-    if (expandedId && !disabled)
-      dispatcher.dispatch({ type: POOL_BALANCES, content: {id: expandedId} } )
   }
 
   startLoading = () => {

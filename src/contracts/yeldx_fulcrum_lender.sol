@@ -50,26 +50,30 @@ contract FulcrumLender {
   address constant usdt = address(0);
   address constant iusdt = address(0);
 
+  function getId() external pure returns (bytes32) {
+    return keccak256(abi.encodePacked("FulcrumLender"));
+  }
+
   function approve(address token) external {
     IERC20(token).approve(_token2iToken(token), uint(-1));
   }
 
   function invest(address token, uint256 assetAmount) external returns(uint256) {
-    address iToken = _token2iToken(token);
-    require(iToken != address(0));
     // mint iToken
-    uint256 poolTokens = Fulcrum(iToken).mint(address(this), assetAmount);
+    uint256 poolTokens = Fulcrum(_token2iToken(token)).mint(address(this), assetAmount);
     require(poolTokens > 0, "Fulcrum: mint failed");
     return poolTokens;
   }
 
   function redeem(address token, uint256 poolAmount) external returns (uint256) {
-    address iToken = _token2iToken(token);
-    require(iToken != address(0));
     // redeem tokens to this contract
-    uint256 assetTokens = Fulcrum(iToken).burn(address(this), poolAmount);
+    uint256 assetTokens = Fulcrum(_token2iToken(token)).burn(address(this), poolAmount);
     require(assetTokens > 0, "Fulcrum: burn failed");
     return assetTokens;
+  }
+
+  function balanceOf(address token, address _owner) external view returns (uint256) {
+    return IERC20(_token2iToken(token)).balanceOf(_owner);
   }
 
   // return the amount of the underlying asset
@@ -79,10 +83,6 @@ contract FulcrumLender {
 
   function getApr(address token) external view returns (uint256) {
     return Fulcrum(_token2iToken(token)).supplyInterestRate().div(100);
-  }
-
-  function getPoolToken(address token) external pure returns (address) {
-    return _token2iToken(token);
   }
 
   function refresh(address token) external {

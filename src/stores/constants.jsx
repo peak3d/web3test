@@ -5,7 +5,6 @@ export const YELD_RETIREMENT = 'YELD_RETIREMENT' // includes stake snapshot and 
 export const YELD_STAKE = 'YELD_STAKE' // perform stake
 export const YELD_UNSTAKE = 'YELD_UNSTAKE' // perform unstake
 export const YELD_REDEEM = 'YELD_REDEEM' // perform ETH redeem
-export const ADDRESS_INDEX_CHANGED = 'ADDRESS_INDEX_CHANGED'
 export const CONNECTION_CHANGED = 'CONNECTION_CHANGED'
 
 export const POOL_BALANCES = 'POOL_BALANCES'

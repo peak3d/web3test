@@ -77,6 +77,10 @@ contract CompoundLender {
   address constant cusdt = 0x135669c2dcBd63F639582b313883F101a4497F76;
   */
 
+  function getId() external pure returns (bytes32) {
+    return keccak256(abi.encodePacked("CompoundLender"));
+  }
+
   function approve(address token) external {
     IERC20(token).approve(_token2cToken(token), uint(-1));
   }
@@ -97,6 +101,12 @@ contract CompoundLender {
     uint256 assetTokens = IERC20(token).balanceOf(address(this));
     require(Compound(cToken).redeem(poolAmount) == 0, "COMPOUND: redeem failed");
     return IERC20(token).balanceOf(address(this)).sub(assetTokens);
+  }
+
+  function balanceOf(address token, address _owner) external view returns (uint256) {
+    address cToken = _token2cToken(token);
+    require(cToken != address(0));
+    return IERC20(cToken).balanceOf(_owner);
   }
 
   // return the amount of the underlying asset

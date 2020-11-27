@@ -5,7 +5,6 @@ import { withRouter } from 'react-router-dom'
 import { colors } from '../../theme'
 
 import { YELD_CONTRACT,
-         ADDRESS_INDEX_CHANGED,
          CONNECTION_CHANGED,
          //FILTER_BURNED
        } from '../../stores/constants'
@@ -51,11 +50,6 @@ const styles = theme => ({
 			width: '100%',
 			border: '1px solid #e1e3e6',
     	padding: '10px',
-		},
-	},
-	versionsContainer: {
-		[theme.breakpoints.down('sm')]: {
-			margin: '10px 0',
 		},
 	},
 	yieldMechanics: {
@@ -168,7 +162,6 @@ const styles = theme => ({
 })
 
 const INITIAL_STATE = {
-  v2Selected: true,
   yMechanicsModalOpen: false,
   burnedBalance: null,
 }
@@ -182,13 +175,11 @@ class Header extends Component {
 
 	componentDidMount() {
     emitter.on(YELD_CONTRACT, this.onYeldContract)
-    emitter.on(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
     emitter.on(CONNECTION_CHANGED, this.onConnectionChanged) //store is ready to handle tx's
 	}
 
 	componentWillUnmount() {
     emitter.removeListener(YELD_CONTRACT, this.onYeldContract)
-    emitter.removeListener(ADDRESS_INDEX_CHANGED, this.onAddressIndexChanged)
     emitter.removeListener(CONNECTION_CHANGED, this.onConnectionChanged)
 	}
 
@@ -197,10 +188,6 @@ class Header extends Component {
       this.setState({ burnedBalance: asset.yeldBurned })
 	}
 
-	onAddressIndexChanged = async (index) => {
-    this.setState({ v2Selected: index > 0 })
-	}
-  
   onConnectionChanged = async (connection) => {
     if (connection) {
       // price update is already triggered from stakesimple
@@ -230,7 +217,7 @@ class Header extends Component {
 					<div className={classes.icon}>
 						<img
 							alt=""
-							src={require('../../assets/logo-v2-yeld.png').default}
+							src={require('../../assets/logo_kjx.png').default}
 							height={'40px'}
 						/>
 					</div>
@@ -253,7 +240,7 @@ class Header extends Component {
 								onClick={() => {
 									this.nav('')
 								}}>
-								YELD.APP{' '}
+								kjx.finance{' '}
 							</Typography>
 							<Typography
 								style={{
@@ -262,7 +249,7 @@ class Header extends Component {
 									lineHeight: '21px',
 									fontWeight: '200',
 								}}>
-								{'Next-Generation Yield Farming'}
+								{'4 Pillow Yield Farming'}
 							</Typography>
 						</div>
 					</div>
@@ -289,20 +276,6 @@ class Header extends Component {
 										</h2>
 									</div>
 								</div>
-
-								<p>
-									The V2 and V3 buttons allow you to change the version of the
-									contracts used in your staking efforts. Always use the latest
-									version, V3.
-								</p>
-
-								<p>
-									The reason why 2 versions are available is because previous
-									beta testers staked funds in the V2 contract. We made some
-									improvements to the V3 contracts and we recommend you to use
-									them exclusively.
-								</p>
-
 								<p>
 									Every block you earn YELD tokens based on the stablecoin yield
 									generated in addition to your standard yield to boost the APY.
@@ -340,35 +313,6 @@ class Header extends Component {
 					{!this.state.burnedBalance ? null : (
 						<div><b>{Number(this.state.burnedBalance).toFixed(2)} YELD</b> burned&nbsp;</div>
 					)}
-
-					{/* Versions */}
-					<div className={classes.versionsContainer}>
-						<Button
-							style={{
-								border: this.state.v2Selected ? 'none' : '1px solid #376EDC',
-							}}
-							variant="outlined"
-							color="primary"
-              disabled={!this.props.connected}
-							onClick={() => store.setYeldAddressIndex(0)}>
-							<Typography variant={'h5'} color="secondary">
-								V2
-							</Typography>
-						</Button>
-						<Button
-							style={{
-								border: this.state.v2Selected ? '1px solid #376EDC' : 'none',
-							}}
-							variant="outlined"
-							color="primary"
-              disabled={!this.props.connected}
-							onClick={() => store.setYeldAddressIndex(1)}>
-							<Typography variant={'h5'} color="secondary">
-								V3
-							</Typography>
-						</Button>
-					</div>
-
 					{/* Yield Mechanics */}
 					<Button
 						className={classes.yieldMechanics}
@@ -412,6 +356,8 @@ class Header extends Component {
 			transform: `translate(-${top}%, -${left}%)`,
 		}
 	}
+
+	nav = () => {};
 
 	renderLink = screen => {
 		const { classes } = this.props

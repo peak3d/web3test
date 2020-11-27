@@ -13,7 +13,6 @@ import {
 } from "react-router-dom";
 import IpfsRouter from 'ipfs-react-router'
 import Header from './components/header';
-import StakeSimple from './components/stakeSimple';
 import InvestSimple from './components/investSimple';
 
 import { ethers } from 'ethers';
@@ -182,14 +181,6 @@ class App extends Component {
                   networkName = {this.state.networkName}
                 />
                 {/* <Vaults /> */}
-                <StakeSimple
-                  connected = {this.state.connected}
-                />
-                <Box style={{
-                  width: "100%",
-                  border: "1px solid #e1e3e6",
-                  borderTop: "none", marginBottom: "30px"}}>
-                </Box>
                 <InvestSimple
                   connected = {this.state.connected}
                 />
