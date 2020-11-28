@@ -68,15 +68,6 @@ contract CompoundLender {
   address constant usdt = 0xD9BA894E0097f8cC2BBc9D24D308b98e36dc6D02;
   address constant cusdt = 0x2fB298BDbeF468638AD6653FF8376575ea41e768;
 
-  /*// ropsten
-  address constant usdc = 0x0D9C8723B343A8368BebE0B5E89273fF8D712e3C;
-  address constant cusdc = 0x8aF93cae804cC220D1A608d4FA54D1b6ca5EB361;
-  address constant dai = 0x31F42841c2db5173425b5223809CF3A38FEde360;
-  address constant cdai = 0x8354C3a332FFB24E3A27be252E01aCFE65A33B35;
-  address constant usdt = 0x516de3a7A567d81737e3a46ec4FF9cFD1fcb0136;
-  address constant cusdt = 0x135669c2dcBd63F639582b313883F101a4497F76;
-  */
-
   function getId() external pure returns (bytes32) {
     return keccak256(abi.encodePacked("CompoundLender"));
   }
