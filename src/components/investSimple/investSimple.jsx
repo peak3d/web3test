@@ -437,7 +437,7 @@ class InvestSimple extends Component {
           <div className={classes.iconInvested}>
             <img
               alt="Optimized Yield Farming"
-              src={require("../../assets/Icon-awesome-dollar-sign.svg").default}
+              src={require("../../assets/dollar-sign.png").default}
               height={"65px"}
             />
           </div>

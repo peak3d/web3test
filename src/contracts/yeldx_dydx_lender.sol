@@ -96,16 +96,16 @@ library SafeMath {
 contract DyDxLender {
   using SafeMath for uint256;
   /*//mainnnet
-  address constant dydx = address(0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e);
+  address constant dydx = 0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e;
   address constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-  address constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+  address constant sai = address(0);
   */
   // kovan
-  address constant dydx = address(0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e);
-  address constant usdc = 0xb7a4F3E9097C08dA09517b5aB877F7a917224ede;
-  address constant dai = address(0);
-  address constant usdt = address(0);
+  address constant dydx = 0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE;
+  address constant usdc = 0xe22da380ee6B445bb8273C81944ADEB6E8450422;
+  address constant dai = 0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD;
+  address constant sai = 0xC4375B7De8af5a38a93548eb8453a498222C4fF2;
 
   function getId() external pure returns (bytes32) {
     return keccak256(abi.encodePacked("DyDxLender"));
@@ -134,9 +134,8 @@ contract DyDxLender {
     ActionArgs[] memory args = new ActionArgs[](1);
     args[0] = act;
 
-    uint256 poolTokens = IERC20(dToken).balanceOf(address(this));
-    DyDx(dToken).operate(infos, args);
-    return IERC20(dToken).balanceOf(address(this)).sub(poolTokens);
+    DyDx(dydx).operate(infos, args);
+    return assetAmount;
   }
 
   function redeem(address token, uint256 poolAmount) external returns (uint256) {
@@ -158,9 +157,8 @@ contract DyDxLender {
     ActionArgs[] memory args = new ActionArgs[](1);
     args[0] = act;
 
-    uint256 assetTokens = IERC20(token).balanceOf(address(this));
     DyDx(dydx).operate(infos, args);
-    return IERC20(token).balanceOf(address(this)).sub(assetTokens);
+    return poolAmount;
   }
 
   function balanceOf(address token, address _owner) external view returns (uint256) {
@@ -176,11 +174,10 @@ contract DyDxLender {
 
   function getApr(address token) external view returns (uint256) {
     uint dToken = _token2dToken(token);
-    uint256 rate      = DyDx(dydx).getMarketInterestRate(dToken).value;
+    uint256 rate = DyDx(dydx).getMarketInterestRate(dToken).value;
     uint256 aprBorrow = rate * 31622400;
-    uint256 borrow    = DyDx(dydx).getMarketTotalPar(dToken).borrow;
-    uint256 supply    = DyDx(dydx).getMarketTotalPar(dToken).supply;
-    uint256 usage     = (borrow * 1e18) / supply;
+    Set memory set = DyDx(dydx).getMarketTotalPar(dToken);
+    uint256 usage = (set.borrow * 1e18) / set.supply;
     return (((aprBorrow * usage) / 1e18) * DyDx(dydx).getEarningsRate().value) / 1e18;
   }
 
@@ -188,6 +185,8 @@ contract DyDxLender {
   }
 
   function _token2dToken(address asset) internal pure returns (uint){
+    if (asset == sai)
+      return 1;
     if (asset == usdc)
       return 2;
     if (asset == dai)

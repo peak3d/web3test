@@ -69,8 +69,8 @@ export default {
     // Kovan
     42: {
       DAIv2: {
-        yeld: '',
-        token: '',
+        yeld: '0x5a201f1E6a0fA83393355D13C3E7eADa10CB730f',
+        token: '0xC4375B7De8af5a38a93548eb8453a498222C4fF2',
       },
       TUSDv2: {
         yeld: '',
@@ -81,8 +81,8 @@ export default {
         token: '',
       },
       USDCv2: {
-        yeld: '0xB1d34042465BA0deA89DEFCdFb444377a6447441',
-        token: '0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',
+        yeld: '0x98edd562897162F1267C567AB95FEe75CD394476',
+        token: '0xe22da380ee6B445bb8273C81944ADEB6E8450422',
       },
       retirementYeldAddresses: '0x05B6fcAeD7F05A9f4B14c7e874fafbAb379f64E5',
 

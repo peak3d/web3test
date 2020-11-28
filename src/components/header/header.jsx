@@ -22,7 +22,7 @@ const styles = theme => ({
     display: 'flex',
     border: '1px solid #e1e3e6',
 		[theme.breakpoints.down('sm')]: {
-			marginBottom: '40px',
+			flexDirection: 'column'
 		},
 	},
 	headerV2: {
@@ -31,7 +31,6 @@ const styles = theme => ({
 		display: 'flex',
 		padding: '24px 32px',
 		alignItems: 'center',
-		justifyContent: 'center',
 		width: '391px',
   },
 	account: {
@@ -41,23 +40,15 @@ const styles = theme => ({
 		width: 'calc(100% - 400px)',
 		marginRight: '20px',
 		[theme.breakpoints.down('sm')]: {
-			display: 'flex',
-			flexDirection: 'column-reverse',
-			position: 'absolute',
-			top: '100px',
-			left: '50%',
-			transform: 'translateX(-50%)',
 			width: '100%',
 			border: '1px solid #e1e3e6',
     	padding: '10px',
+      justifyContent: 'center',
 		},
 	},
 	yieldMechanics: {
-		border: '1px solid #376EDC',
+		border: '1px solid #e1e3e6',
 		margin: '0 10px',
-		[theme.breakpoints.down('sm')]: {
-			marginTop: '10px',
-		},
 	},
 	icon: {
 		marginTop: '5px',
@@ -66,7 +57,7 @@ const styles = theme => ({
 		width: '3px',
 		height: '40px',
 		marginLeft: '15px',
-		backgroundColor: '#2036ff',
+		backgroundColor: '#e1e3e6',
 	},
 	brandV2: {
 		display: 'flex',
@@ -77,7 +68,7 @@ const styles = theme => ({
 		height: '100%',
 		marginRight: '15px',
 		marginLeft: '15px',
-		backgroundColor: colors.borderBlue,
+		backgroundColor: colors.borderGrey,
 	},
 	links: {
 		display: 'flex',
@@ -88,7 +79,7 @@ const styles = theme => ({
 		cursor: 'pointer',
 		'&:hover': {
 			paddingBottom: '9px',
-			borderBottom: '3px solid ' + colors.borderBlue,
+			borderBottom: '3px solid ' + colors.borderGrey,
 		},
 	},
 	title: {
@@ -103,7 +94,7 @@ const styles = theme => ({
 		margin: '0px 12px',
 		cursor: 'pointer',
 		paddingBottom: '9px',
-		borderBottom: '3px solid ' + colors.borderBlue,
+		borderBottom: '3px solid ' + colors.borderGrey,
 	},
 	walletAddress: {
 		padding: '12px',
@@ -132,11 +123,6 @@ const styles = theme => ({
 		height: '10px',
 		marginRight: '3px',
 		marginLeft: '6px',
-	},
-	name: {
-		[theme.breakpoints.down('sm')]: {
-			display: 'none',
-		},
 	},
 	modal: {
 		display: 'flex',
@@ -233,14 +219,14 @@ class Header extends Component {
 								variant={'h3'}
 								className={classes.name}
 								style={{
-									color: '#2036ff',
+									color: 'e1e3e6',
 									fontSize: '16px',
 									fontWeight: '500',
 								}}
 								onClick={() => {
 									this.nav('')
 								}}>
-								kjx.finance{' '}
+								KJX.finance{' '}
 							</Typography>
 							<Typography
 								style={{

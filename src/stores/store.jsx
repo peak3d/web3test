@@ -46,7 +46,7 @@ class Store {
       name: 'DAI',
       symbol: 'DAI',
       description: 'DAI Stablecoin',
-      investSymbol: 'yUSDC',
+      investSymbol: 'yDAI',
       contract: null,
       tokenContract: null,
       maxApr: 0,
