@@ -392,7 +392,12 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
   address public apr;
 
   // Yeld
-  mapping(address => uint256) public depositBlockStarts;
+  struct Reward {
+    uint256 depositBlockStart;
+    uint256 yeldEarned;
+  }
+
+  mapping(address => Reward) public rewards;
   address public uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
   address public usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -449,8 +454,8 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
   }
   function getGeneratedYelds() public view returns(uint256) {
     uint256 blocksPassed;
-    if (depositBlockStarts[msg.sender] > 0) {
-      blocksPassed = block.number.sub(depositBlockStarts[msg.sender]);
+    if (rewards[msg.sender].depositBlockStart > 0) {
+      blocksPassed = block.number.sub(rewards[msg.sender].depositBlockStart);
     } else {
       return 0;
     }
@@ -462,7 +467,13 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
       accomulatedStablecoins = (calcPoolValueInToken().mul(ibalance)).div(_totalSupply);
     }
     uint256 generatedYelds = accomulatedStablecoins.mul(1e12).div(oneMillion).mul(yeldToRewardPerDay).div(1e18).mul(blocksPassed).div(oneDayInBlocks);
-    return generatedYelds;
+    return generatedYelds.add(rewards[msg.sender].yeldEarned);
+  }
+  // Save already earned yeld before deposit / withdraw / transfer changes shares
+  function _lockEarnedYeld() internal returns (uint256) {
+    rewards[msg.sender].yeldEarned = getGeneratedYelds();
+    rewards[msg.sender].depositBlockStart = block.number;
+    return rewards[msg.sender].yeldEarned;
   }
   // Converts USDC to ETH and returns how much ETH has been received from Uniswap
   function usdcToETH(uint256 _amount) internal returns(uint256) {
@@ -499,9 +510,8 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
       IERC20(token).safeTransferFrom(msg.sender, address(this), _amount);
 
       // Yeld
-      depositBlockStarts[msg.sender] = block.number;
-      // Yeld
-      
+      _lockEarnedYeld(msg.sender);
+
       // Calculate pool shares
       uint256 shares = 0;
       if (pool == 0) {
@@ -526,7 +536,7 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
       // Could have over value from cTokens
       pool = _calcPoolValueInToken();
       // Yeld
-      uint256 generatedYelds = getGeneratedYelds();
+      uint256 generatedYelds = _lockEarnedYeld(msg.sender);
       // Yeld
       uint256 stablecoinsToWithdraw = (pool.mul(_shares)).div(_totalSupply);
       _balances[msg.sender] = _balances[msg.sender].sub(_shares, "redeem amount exceeds balance");
@@ -537,11 +547,9 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
         _withdrawSome(stablecoinsToWithdraw.sub(b));
       }
 
-
       // Yeld
       // Take 1% of the amount to withdraw
       uint256 onePercent = stablecoinsToWithdraw.div(100);
-      depositBlockStarts[msg.sender] = block.number;
       yeldToken.transfer(msg.sender, generatedYelds);
       // Take a portion of the profits for the buy and burn and retirement yeld
       // Convert half the USDC earned into ETH for the protocol algorithms
@@ -567,6 +575,12 @@ contract yUSDC is ERC20, ERC20Detailed, ReentrancyGuard, Structs, Ownable {
 
       pool = _calcPoolValueInToken();
       rebalance();
+  }
+
+  function _transfer(address sender, address recipient, uint256 amount) internal {
+    _lockEarnedYeld(sender);
+    _lockEarnedYeld(recipient);
+    super._transfer(sender, recipient, amount);
   }
 
   function recommend() public view returns (Lender) {
